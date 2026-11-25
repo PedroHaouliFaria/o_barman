@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#172821" />
+    <title>Spirits &amp; Spirits · Turno da noite</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css?v=held-contents" />
+    <script src="vendor/aframe/aframe.min.js"></script>
+    <script type="module" src="js/main.js?v=quest-input-4"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand">
+        <span class="seal" aria-hidden="true">&amp;</span><span>Spirits <i>&amp;</i> Spirits</span>
+      </div>
+      <nav aria-label="Opções do jogo">
+        <button id="turn-control" disabled>Iniciar turno</button>
+        <button id="sound" aria-pressed="true">Som ligado</button>
+        <button id="open-notebook">Caderno</button>
+        <button id="fullscreen" hidden>Tela cheia</button>
+        <button id="help">Controles</button>
+        <button class="vr" id="enter-vr" disabled>Entrar em VR</button>
+      </nav>
+    </header>
+    <main class="stage" aria-label="Estação de trabalho">
+      <a-scene
+        webxr="optionalFeatures: bounded-floor, hand-tracking, tracked-sources"
+        embedded
+        xr-mode-ui="enabled: false"
+        loading-screen="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        renderer="antialias: true; alpha: false"
+        background="color: #343e37"
+      >
+        <a-entity id="rig"
+          ><a-camera
+            id="head"
+            position="0 1.6 0"
+            wasd-controls="enabled: false"
+            look-controls="pointerLockEnabled: false"
+          ></a-camera
+        ></a-entity>
+      </a-scene>
+    </main>
+    <dialog id="notebook" class="paper" aria-label="Caderno do turno">
+      <form method="dialog"><button class="close" aria-label="Voltar ao jogo">×</button></form>
+      <div class="paper-top"><span>Livro de serviço</span><span id="folio">Ato I</span></div>
+      <div id="entry">
+        <p class="eyebrow">Ato I &nbsp; / &nbsp; Normalidade</p>
+        <h1>Turno da<br /><em>noite.</em></h1>
+        <p class="intro">
+          O bar acaba de abrir. Seu lugar é atrás do balcão, com a primeira comanda e um manual de
+          receitas à mão.
+        </p>
+        <div class="ticket-line"><span>Atendimentos</span><strong id="total-orders"></strong></div>
+        <div class="ticket-line"><span>Estação</span><strong>Desktop ou VR</strong></div>
+        <button id="start" class="primary" disabled>
+          Iniciar turno <span aria-hidden="true">→</span>
+        </button>
+        <p class="footnote">
+          A amostra inclui pedidos com insetos e gosma fictícia. O jogo completo aborda terror corporal
+          fictício e alterações de som e visão.
+        </p>
+      </div>
+      <div id="service" hidden>
+        <p class="eyebrow" id="order-no"></p>
+        <h1 id="customer"></h1>
+        <p class="quote" id="dialogue"></p>
+        <div class="tabs" aria-label="Páginas do livro">
+          <button data-page="order" aria-pressed="true">Comanda</button>
+          <button data-page="manual" aria-pressed="false">Manual</button>
+          <button data-page="bench" aria-pressed="false">Bancada</button>
+        </div>
+        <section id="order" class="page">
+          <h2 id="drink"></h2>
+          <div id="contents"></div>
+          <button class="primary" data-command="deliver">
+            Entregar copo <span aria-hidden="true">→</span>
+          </button>
+        </section>
+        <section id="manual" class="page" hidden>
+          <label for="recipe">Receita do manual</label
+          ><select id="recipe"></select>
+          <div id="recipe-text"></div>
+        </section>
+        <section id="bench" class="page" hidden>
+          <h2>Preparo assistido</h2>
+          <label for="target">Recipiente de trabalho</label>
+          <select id="target">
+            <option value="glass">Copo</option>
+            <option value="shaker">Coqueteleira</option>
+          </select>
+          <label for="ingredient">Ingrediente · 1 unidade</label>
+          <div class="field-row">
+            <select id="ingredient"></select
+            ><button id="add">Adicionar</button>
+          </div>
+          <div id="event-tools" class="tools" hidden>
+            <button id="event-action"></button>
+            <button id="event-return" data-command="discardSpecial">Devolver ao ambiente</button>
+          </div>
+          <div class="tools">
+            <button data-command="stir">Mexer com a colher</button>
+            <button data-command="muddle">Macerar no copo</button
+            ><button data-command="toggleLid" id="lid">Fechar tampa</button
+            ><button data-command="shake">Agitar</button
+            ><button data-command="transfer">Transferir ao copo</button
+            ><button id="rinse">Lavar recipiente</button>
+          </div>
+          <label for="glass-type">Modelo do copo vazio</label
+          ><select id="glass-type"></select>
+          <p id="bench-stock" class="stock"></p>
+        </section>
+        <div class="service-bottom">
+          <button id="pause">Pausar turno</button><button id="height">Ajustar altura</button>
+        </div>
+      </div>
+      <div id="end" hidden>
+        <p class="eyebrow">Registro do turno</p>
+        <h1>Amostra<br /><em>concluída.</em></h1>
+        <p>Você serviu o Martini com aranha ao Homem Alongado e concluiu os pedidos desta amostra.</p>
+        <button class="primary" data-command="restart">
+          Recomeçar turno <span aria-hidden="true">↺</span>
+        </button>
+      </div>
+      <p id="feedback" role="status">Preparando o balcão…</p>
+      <button id="credits">Créditos do protótipo</button>
+    </dialog>
+    <dialog id="info">
+      <form method="dialog"><button class="close" aria-label="Fechar">×</button></form>
+      <div id="info-content"></div>
+    </dialog>
+    <noscript>Ative o JavaScript para carregar o balcão tridimensional.</noscript>
+  </body>
+</html>

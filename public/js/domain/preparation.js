@@ -83,6 +83,10 @@ function transfer({ glass, shaker }) {
 
 export function prepare(state, action) {
   const { glass, shaker, event } = state;
+  if (!glass.type && (['transfer', 'stir', 'muddle'].includes(action.type) ||
+      (['add', 'rinse'].includes(action.type) && action.target === 'glass'))) {
+    return fail('Pegue um copo na estante.');
+  }
   switch (action.type) {
     case 'collect':
       if (!event || event.ingredient !== action.ingredient) return fail('Este pedido não tem esse ingrediente ambiental.');

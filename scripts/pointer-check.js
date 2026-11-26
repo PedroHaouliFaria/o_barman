@@ -132,7 +132,8 @@ export async function checkPointer(page, shot) {
     assert.equal(await page.locator('#event-tools').isVisible(), false);
     await page.mouse.click(stage.x + stage.width * 0.07, stage.y + stage.height * 0.07);
   }
-  await place('glass', 'customer');
+  await pick('choose-highball');
+  await pick('customer');
   await feedback(/devolveu o copo/);
   assert.equal(await page.locator('#customer').innerText(), 'Executivo');
   await place('rum', 'glass', true);
@@ -152,6 +153,7 @@ export async function checkPointer(page, shot) {
   await feedback(/Livro de receitas · Cuba Libre/);
   for (const type of ['coupe', 'highball', 'rocks']) {
     await pick('choose-' + type);
+    await page.mouse.click(stage.x + stage.width * 0.07, stage.y + stage.height * 0.07);
     assert.equal(
       await page.locator('#glass-type').inputValue(),
       type,
@@ -164,6 +166,8 @@ export async function checkPointer(page, shot) {
   for (const id of ['cachaca', 'ice']) await place(id, 'glass');
   await place('glass', 'tray');
   assert.equal(await page.locator('#customer').innerText(), 'Aposentado');
+  await pick('choose-coupe');
+  await page.mouse.click(stage.x + stage.width * 0.07, stage.y + stage.height * 0.07);
   for (const id of ['whisky', 'lemon_juice', 'sugar_syrup', 'ice']) await place(id, 'shaker');
   await place('lid', 'shaker');
   await feedback(/fechada/);
@@ -181,6 +185,8 @@ export async function checkPointer(page, shot) {
   const rest = await page.evaluate(async () => (await import('/js/domain/menu.js')).ORDERS.slice(3));
   for (const order of rest) {
     assert.equal(await page.locator('#customer').textContent(), order.customer);
+    await pick('choose-' + order.glass);
+    await page.mouse.click(stage.x + stage.width * 0.07, stage.y + stage.height * 0.07);
     const vessel = order.technique === 'shake' ? 'shaker' : 'glass';
     for (const id of Object.keys(order.ingredients)) {
       if (id === order.event) {

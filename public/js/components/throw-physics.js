@@ -5,7 +5,9 @@ function makeBody(id, state) {
   function cylinder(top, bottom, height, y = 0) {
     body.addShape(new Cylinder(top, bottom, height, 12), new Vec3(0, y, 0));
   }
-  if (id === 'spoon' || id === 'pestle') {
+  if (['pliers', 'tweezers', 'knife'].includes(id)) {
+    body.addShape(new Box(new Vec3(id === 'tweezers' ? 0.077 : 0.105, 0.007, id === 'pliers' ? 0.029 : 0.016)));
+  } else if (id === 'spoon' || id === 'pestle') {
     cylinder(id === 'spoon' ? 0.01 : 0.023, id === 'spoon' ? 0.01 : 0.023, 0.17);
     body.addShape(new Sphere(id === 'spoon' ? 0.025 : 0.04), new Vec3(0, id === 'spoon' ? 0.079 : -0.077, 0));
   } else if (id === 'glass') {
@@ -56,13 +58,36 @@ function attachLegs(world, item, torso) {
   return legs;
 }
 
-export function throwPhysics(root, bottles, isHeld) {
+export function throwPhysics(root, bottles, isHeld, drawer) {
   const world = new World({ gravity: new Vec3(0, -9.81, 0), allowSleep: true });
   world.defaultContactMaterial.friction = 0.48;
   world.defaultContactMaterial.restitution = 0.19;
   const bodies = new Map();
   const legs = new Map();
   const local = new Vec3(), rotation = new Quaternion();
+  let drawerBody;
+  function moveDrawer(dx) {
+    if (!drawerBody) return true;
+    const occupants = [];
+    for (const [item, body] of bodies) {
+      const { x, y, z } = body.position.vsub(drawerBody.position);
+      if (x < 0 || x > 0.31 || Math.abs(z) > 0.26 || y < -0.055 || y > 0.08) continue;
+      body.updateAABB();
+      if (dx > 0 && body.aabb.upperBound.y > 0.997) return false;
+      occupants.push([item, body]);
+    }
+    drawerBody.position.x += dx;
+    drawerBody.aabbNeedsUpdate = true;
+    for (const [item, body] of occupants) {
+      for (const part of [body, ...(legs.get(item) ?? []).map(leg => leg.limb)]) {
+        part.position.x += dx;
+        part.aabbNeedsUpdate = true;
+        part.wakeUp();
+      }
+      item.el.object3D.position.copy(body.position);
+    }
+    return true;
+  }
   let roomReady = false;
   function remove(item) {
     const body = bodies.get(item);
@@ -86,6 +111,17 @@ export function throwPhysics(root, bottles, isHeld) {
         body.position.copy(el.object3D.position);
         body.quaternion.copy(el.object3D.quaternion);
         world.addBody(body);
+      }
+      if (drawer) {
+        drawerBody = new Body({ mass: 0 });
+        drawerBody.position.copy(drawer.object3D.position);
+        for (const panel of drawer.children) {
+          if (panel.tagName !== 'A-BOX') continue;
+          const { width, height, depth } = panel.getAttribute('geometry');
+          drawerBody.addShape(new Box(new Vec3(width / 2, height / 2, depth / 2)),
+            new Vec3().copy(panel.object3D.position), new Quaternion().copy(panel.object3D.quaternion));
+        }
+        world.addBody(drawerBody);
       }
       roomReady = true;
     }
@@ -122,5 +158,5 @@ export function throwPhysics(root, bottles, isHeld) {
       }
     }
   }
-  return { launch, remove, step, bodies };
+  return { launch, remove, step, bodies, moveDrawer };
 }

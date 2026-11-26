@@ -124,17 +124,7 @@ try {
   await checkLayout();
   await shot('entrada');
   // A new player can interact with the counter before opening the notebook.
-  for (const id of ['lime', 'glass']) {
-    const point = await page.evaluate(key => {
-      const scene = document.querySelector('a-scene');
-      const item = scene.querySelector('[data-station-item="' + key + '"]');
-      const pos = item.object3D.getWorldPosition(new AFRAME.THREE.Vector3()).project(scene.camera);
-      const rect = scene.canvas.getBoundingClientRect();
-      return [rect.left + (1 + pos.x) * rect.width / 2, rect.top + (1 - pos.y) * rect.height / 2];
-    }, id);
-    await page.mouse.click(...point);
-  }
-  assert.match(await page.locator('#feedback').textContent(), /Limão no copo/);
+  assert.equal(await page.locator('[data-station-item="glass"]').evaluate(el => el.object3D.visible), false);
   await page.reload();
   await click('turn-control');
   await click('open-notebook');
@@ -152,8 +142,9 @@ try {
   assert.equal(await page.locator('#recipe option').count(), 9);
   await tab('order');
   await command('deliver');
-  await message(/devolveu o copo/);
+  await message(/Pegue um copo/);
   await tab('bench');
+  await page.selectOption('#glass-type', 'highball');
   await add('rum', 'rum');
   await tab('order');
   await command('deliver');
@@ -169,6 +160,7 @@ try {
   assert.deepEqual(await stockLayout(), openingStock);
 
   await tab('bench');
+  await page.selectOption('#glass-type', 'rocks');
   await add('lime', 'sugar');
   await command('muddle');
   await add('cachaca', 'ice');
@@ -188,6 +180,7 @@ try {
   await tab('bench');
   assert.deepEqual(await stockLayout(), openingStock);
   assert.equal(await page.inputValue('#target'), 'shaker');
+  await page.selectOption('#glass-type', 'coupe');
   await add('whisky', 'lemon_juice', 'sugar_syrup', 'ice');
   await command('shake');
   await message(/Feche/);
@@ -203,6 +196,7 @@ try {
   for (const order of remaining) {
     assert.equal(await page.locator('#customer').innerText(), order.customer);
     await tab('bench');
+    await page.selectOption('#glass-type', order.glass);
     if (order.event) {
       await click('event-action');
       await click('event-return');

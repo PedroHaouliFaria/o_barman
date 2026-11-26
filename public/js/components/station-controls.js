@@ -1,7 +1,7 @@
 import { INGREDIENTS } from '../domain/game.js';
 import { entity, group, sphere } from '../scene/blockout.js';
 import { newMotion, pourStep, resetShake, shakeStep, stirStep, muddleStep } from './motion.js?v=utensil-gestures';
-import { throwPhysics } from './throw-physics.js';
+import { throwPhysics } from './throw-physics.js?v=drawer-solid-2';
 
 function installTicker() {
   if (AFRAME.components['station-input']) return;
@@ -49,7 +49,7 @@ export function bindControls({
   const portions = new Set(['lime', 'ice', 'mint']);
   const portionAtRest = new Map([...portions].map(id => [id, items.get(id).el.object3D.visible]));
   const bottles = [...items.values()].filter(item => INGREDIENTS[item.id]?.kind === 'liquid');
-  const physics = throwPhysics(root, bottles, item => holders().some(hand => hand.held === item));
+  const physics = throwPhysics(root, bottles, item => holders().some(hand => hand.held === item), items.get('drawer').el);
   const change = new THREE.Quaternion();
   const sugarDose = items.get('spoon').el.querySelector('[data-sugar-dose]');
   let spoonLoaded = false;
@@ -118,6 +118,7 @@ export function bindControls({
   function resetItem(holder) {
     const item = holder.held;
     if (!item) return;
+    if (item.stow) return throwItem(holder, delta.set(0, 0, 0), axis.set(0, 0, 0));
     item.el.object3D.position.copy(item.home);
     if (item.homeQuaternion) item.el.object3D.quaternion.copy(item.homeQuaternion);
     else item.el.object3D.quaternion.identity();
@@ -142,9 +143,17 @@ export function bindControls({
       item.el.object3D.quaternion.copy(item.homeQuaternion ?? quaternion.identity());
       if (portions.has(item.id)) item.el.object3D.visible = portionAtRest.get(item.id);
       if (INGREDIENTS[item.id]?.special) item.el.object3D.visible = false;
+      item.stow?.();
     }
   }
   function pick(holder, item) {
+    if (item?.id.startsWith('choose-')) {
+      if (session.state.phase === 'menu') act({ type: 'start' });
+      const glass = items.get('glass');
+      if (holders().some(hand => hand.held === glass)) return;
+      if (!act({ type: 'selectGlass', glass: item.id.slice(7) }).ok) return;
+      item = glass;
+    }
     const source = item?.id.startsWith('event-') ? item : null;
     if (source) item = items.get(source.id.slice(6));
     if (item?.id.startsWith('bin-')) item = items.get(item.id.slice(4));
@@ -177,6 +186,7 @@ export function bindControls({
     holder.spin?.set(0, 0, 0);
     onInteraction();
     holder.held = item;
+    if (item.stow) item.stowed = false;
     if (portions.has(item.id)) item.el.object3D.visible = true;
     if (item.id === 'glass') items.get('receiving-hand').el.object3D.visible = true;
     holder.motion = newMotion();
@@ -215,6 +225,21 @@ export function bindControls({
       return;
     }
     if (!live()) return;
+    const drawer = items.get('drawer');
+    const overDrawer = target === drawer && drawer.el.object3D.position.x < drawer.home.x;
+    if (holder.isMouse && release && (overDrawer || item.stow)) {
+      const surfaces = overDrawer ? [drawer.el.object3D] : [...root.children]
+        .filter(el => el.tagName === 'A-BOX').map(el => el.object3D);
+      const hit = ray.intersectObjects(surfaces, true)[0];
+      if (hit && hit.face.normal.y > 0.5) {
+        root.object3D.worldToLocal(point.copy(hit.point));
+        point.y += item.stow ? 0.025 : 0.12;
+        item.el.object3D.position.copy(point);
+        if (item.stow) item.el.object3D.rotation.set(0, holder.el.object3D.rotation.y, 0);
+      }
+      throwItem(holder, delta.set(0, 0, 0), axis.set(0, 0, 0));
+      return;
+    }
     const id = item.id;
     const container = target?.id === 'glass' || target?.id === 'shaker' ? target.id : null;
     if (id === 'lid') {
@@ -528,13 +553,14 @@ export function bindControls({
     if (type === 'squeezeend') return drop(hand);
     const target = front(hand);
     if (type === 'squeezestart') {
-      if (!hand.held) grab(hand, target);
+      if (!hand.held && target?.id === 'drawer') activate(target.id);
+      else if (!hand.held) grab(hand, target);
     } else if (hand.source.hand) {
       // Pinch once to pick up, then pinch a target to use or an empty spot to release.
-      if (!hand.held && (target?.held || target?.id.startsWith('bin-'))) grab(hand, target);
-      else if (hand.held && (!target || hand.held.id === 'lid' || INGREDIENTS[hand.held.id]?.kind === 'solid')) drop(hand);
+      if (!hand.held && (target?.held || target?.id.startsWith('bin-') || target?.id.startsWith('choose-'))) grab(hand, target);
+      else if (hand.held && (!target || hand.held.id === 'lid' || hand.held.stow || INGREDIENTS[hand.held.id]?.kind === 'solid')) drop(hand);
       else operate(hand, target);
-    } else if (!hand.held && (target?.held || target?.id.startsWith('bin-'))) {
+    } else if (!hand.held && (target?.held || target?.id.startsWith('bin-') || target?.id.startsWith('choose-'))) {
       grab(hand, target);
       hand.triggerItem = hand.held;
     } else operate(hand, target);
@@ -666,6 +692,13 @@ export function bindControls({
   return {
     releaseAll,
     restoreThrown,
+    clearGlass() {
+      const glass = items.get('glass');
+      physics.remove(glass);
+      glass.el.object3D.position.copy(glass.home);
+      glass.el.object3D.quaternion.identity();
+    },
+    moveDrawer: physics.moveDrawer,
     releaseLid() {
       physics.remove(items.get('lid'));
       const holder = holders().find(hand => hand.held?.id === 'lid');

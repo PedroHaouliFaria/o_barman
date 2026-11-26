@@ -1,5 +1,11 @@
 import { GLASSES, INGREDIENTS } from '../domain/game.js';
 
+const techniques = {
+  muddle: { target: 'glass', text: 'Macerado' },
+  stir: { target: 'glass', text: 'Mexido' },
+  shake: { target: 'shaker', text: 'Batido' },
+};
+
 // Keep the signs outside the grabbable meshes so they never intercept a pour or delivery.
 export function vesselFeedback({ root, scene, vessels, label }) {
   const desktopList = document.createElement('aside');
@@ -21,7 +27,7 @@ export function vesselFeedback({ root, scene, vessels, label }) {
   function render(state, reset) {
     for (const [id, panel] of Object.entries(panels)) {
       const vessel = state[id];
-      panel.hideContents = id === 'glass' && vessel.returned;
+      panel.hideContents = id === 'glass' && (!vessel.type || vessel.returned);
       if (panel.hideContents) {
         panel.until = 0;
         continue;
@@ -36,9 +42,13 @@ export function vesselFeedback({ root, scene, vessels, label }) {
     }
   }
 
-  function added(action) {
-    const panel = panels[action.target];
-    panel.receipt.print({ lines: ['+1  ' + INGREDIENTS[action.ingredient].name], center: true, font: 0.45 });
+  function confirmPreparation(action) {
+    const receipt = action.type === 'add'
+      ? { target: action.target, text: '+1  ' + INGREDIENTS[action.ingredient].name }
+      : techniques[action.type];
+    if (!receipt) return;
+    const panel = panels[receipt.target];
+    panel.receipt.print({ lines: [receipt.text], center: true, font: 0.45 });
     panel.until = performance.now() + 1600;
   }
 
@@ -91,5 +101,5 @@ export function vesselFeedback({ root, scene, vessels, label }) {
     }
     desktopList.hidden = !showDesktopList;
   }
-  return { render, added, frame, destroy: () => desktopList.remove() };
+  return { render, confirmPreparation, frame, destroy: () => desktopList.remove() };
 }

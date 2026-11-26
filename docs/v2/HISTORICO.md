@@ -26,3 +26,12 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe enviou o devlog e a conversa com o agente anterior** (curva de estranheza, 15 personagens; "gostei desses personagens").
 → Devlog original salvo em [DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md](../../DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md) (texto recuperado de erro de codificação, conteúdo intacto). Detalhes de personagens e curva em [personagens-e-curva.md](personagens-e-curva.md).
+
+**Felipe:** "Sim, começa" (migrar o jogo para R3F com a mesma lógica e a cena atual)
+→ Migração feita na branch `feat/redesign-visual`:
+- Novo projeto Vite + TypeScript + React Three Fiber + @react-three/xr + Rapier (`src/`).
+- Regras do jogo (`src/domain/`) e gestos (`src/interaction/motion.js`) copiados **sem mudança**; os 32 testes de regra passam.
+- Cena, interações de mouse/teclado, controles e mãos do Quest e placas portadas 1:1 do A-Frame. Física de arremesso trocada de cannon-es para Rapier (as patas articuladas dos insetos ficaram para depois).
+- Protótipo A-Frame preservado em `legacy/aframe/` (inclusive o README antigo). `npm run start:legacy` abre a versão antiga.
+- Ensaios novos: `npm run test:browser` (9 pedidos, arremesso, reinício) e `npm run test:xr` (Quest 3 simulado pegando, soltando e despejando). `?xr-emulate` simula o Quest no navegador.
+- `npm run dev:quest` serve HTTPS na rede local para abrir no headset.

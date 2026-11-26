@@ -10,6 +10,7 @@ Documento vivo da reconstrução do jogo. Versões antigas vão para `docs/v2/hi
 | 26/11/2026 | **Lógica e mecânicas ficam como estão por enquanto.** `public/js/domain/` (game, preparation, menu) e seus testes são portados quase sem mudança. | Primeiro refazer visual, som e sensação; regras mudam depois. |
 | 26/11/2026 | **Redesenhar tudo visualmente:** bar, estilo de arte, personagens. | A cena atual é greybox de primitivas. |
 | 26/11/2026 | **O pianista é a trilha sonora do jogo** (ver seção 3). | Ideia do Felipe. |
+| 26/11/2026 | **Migração para R3F concluída** com a cena greybox idêntica à v1. Próximo passo: redesign visual. | Base pronta para modelos .glb, luz e pós-processamento. |
 
 ## 2. Stack técnica
 

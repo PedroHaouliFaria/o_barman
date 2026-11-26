@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bottleSurfaceAt } from '../public/js/components/bottle-placement.js';
+import { bottleSurfaceAt } from '../src/interaction/bottle-placement.js';
 
 test('garrafas repousam sobre a frente e as duas abas da estação', () => {
   for (const [x, z] of [[0.45, -0.73], [-0.97, -0.15], [0.96, 0]]) {

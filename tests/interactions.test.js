@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newMotion, pourStep, shakeStep, stirStep, muddleStep } from '../public/js/components/motion.js';
+import { newMotion, pourStep, shakeStep, stirStep, muddleStep } from '../src/interaction/motion.js';
 
 test('garrafa em pé ou longe permanece sem despejo', () => {
   const input = newMotion();
@@ -73,7 +73,7 @@ test('gestos curtos repetidos atingem o limiar em qualquer eixo', () => {
   }
 });
 
-import { eventPose, EVENT_SOURCES } from '../public/js/scene/environment.js';
+import { eventPose, EVENT_SOURCES } from '../src/interaction/event-paths.js';
 
 test('barata percorre a face interna do balcão entre as duas bancadas', () => {
   const home = EVENT_SOURCES.cockroach.position;

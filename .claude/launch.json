@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"barman","runtimeExecutable":"npx","runtimeArgs":["vite","--port","5173","--strictPort"],"port":5173},{"name":"barman-legacy","runtimeExecutable":"python3","runtimeArgs":["-m","http.server","8187","--bind","127.0.0.1","--directory","legacy/aframe/public"],"port":8187}]}

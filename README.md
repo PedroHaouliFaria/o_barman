@@ -4,13 +4,16 @@ Um jogo de bartender em primeira pessoa. O turno começa com clientes comuns, um
 
 ## Abrir no desktop
 
-Na raiz deste repositório, com Python 3 instalado, execute:
+A v2 roda em **React Three Fiber (Three.js) + WebXR + Rapier**, com Vite e TypeScript. Com Node.js 22 ou superior:
 
 ```sh
-python3 -m http.server 8187 --bind 127.0.0.1 --directory public
+npm install
+npm run dev
 ```
 
-Abra [o balcão no navegador](http://127.0.0.1:8187) e clique em um ingrediente para iniciar o turno com ele na mão. Você também pode usar **Iniciar turno** na barra superior ou a placa **Iniciar** da estação. A cena ocupa a janela abaixo da barra superior. Use **Tela cheia** para expandir também o navegador ou **Caderno** para abrir os controles assistidos. Use um navegador com WebGL 2 habilitado. Com Node.js e npm instalados, `npm start` inicia o mesmo servidor. A distribuição do A-Frame já está no repositório. A pasta `public/` inteira pode ser servida estaticamente, sem etapa de build.
+Abra o endereço que o Vite mostrar (normalmente `http://localhost:5173`) e clique em um ingrediente para iniciar o turno com ele na mão. Você também pode usar **Iniciar turno** na barra superior ou a placa **Iniciar** da estação. Use **Caderno** para os controles assistidos. `npm run build` gera o site estático em `dist/`, que pode ser servido por qualquer hospedagem HTTPS.
+
+O protótipo original em A-Frame está preservado em [legacy/aframe](legacy/aframe/README.md) e abre com `npm run start:legacy`.
 
 ## Jogar
 
@@ -44,31 +47,41 @@ O atendimento aprovado avança o relógio. A sequência segue os pedidos 1 a 8 d
 
 ## Acesso HTTPS no Meta Quest 3
 
-O Quest deve abrir um endereço HTTPS cujo certificado seja aceito pelo navegador. O endereço localhost do computador serve ao teste desktop. Existem dois caminhos para o ensaio físico. [WebXR e execução local no A-Frame](https://aframe.io/faq/)
+O Quest precisa de um endereço HTTPS. Três caminhos:
 
-1. **Hospedagem já disponível com HTTPS confiável.** Sirva o conteúdo completo da pasta `public/` na hospedagem de sua escolha e abra a URL no Meta Quest Browser. Esta entrega fornece o site estático para esse uso.
-2. **Caddy 2 na rede local.** Conecte computador e headset à mesma rede. Na raiz do projeto, substitua o IP do exemplo pelo endereço LAN do computador. No macOS com Wi-Fi em en0, `ipconfig getifaddr en0` mostra o endereço.
+1. **Vite na rede local (mais rápido para desenvolver).** Computador e headset na mesma rede:
 
    ```sh
+   npm run dev:quest
+   ```
+
+   O Vite mostra um endereço `https://<ip-do-computador>:5173`. Abra no Meta Quest Browser e aceite o aviso do certificado de desenvolvimento.
+2. **Hospedagem com HTTPS confiável.** Rode `npm run build` e publique a pasta `dist/`.
+3. **Caddy 2 na rede local**, servindo `dist/` com a autoridade local do Caddy:
+
+   ```sh
+   npm run build
    BAR_HOST=192.168.1.42 caddy run --config Caddyfile
    ```
 
-   O Caddy serve em `https://192.168.1.42:8443` nesse exemplo. Libere a porta TCP 8443 para a rede de teste se o firewall a bloquear. A configuração usa a autoridade local do Caddy e mantém a instalação de confiança manual. Localize o diretório de dados com `caddy environ`, campo `caddy.AppDataDir`. O certificado **público** da raiz está em `pki/authorities/local/root.crt` dentro desse diretório. Use o procedimento de instalação de CA de usuário disponível na versão/gestão do seu headset para confiar nesse certificado. A página deve abrir sem alerta. Se o navegador do headset não aceitar uma CA local, use a opção de hospedagem com certificado público. [HTTPS local no Caddy](https://caddyserver.com/docs/automatic-https#local-https)
+   Troque o IP pelo endereço LAN do computador (`ipconfig getifaddr en0` no macOS). Para o headset confiar, instale a raiz pública do Caddy (`pki/authorities/local/root.crt` dentro de `caddy environ` → `caddy.AppDataDir`). [HTTPS local no Caddy](https://caddyserver.com/docs/automatic-https#local-https)
 
-No navegador do headset escolha **Entrar em VR**. Use a placa **Iniciar** se o turno ainda estiver no menu e ajuste **Altura**. As verificações de mãos, tracking, alcance, conforto, cadência de quadros e retorno da sessão precisam ser executadas no aparelho físico.
+No headset escolha **Entrar em VR**, use a placa **Iniciar** se o turno ainda estiver no menu e ajuste **Altura**. Mãos, tracking, alcance, conforto, FPS e retorno da sessão só podem ser verificados no aparelho físico.
+
+**Sem headset:** abra `http://localhost:5173/?xr-emulate` para simular um Meta Quest 3 no navegador (Chrome) e entrar em VR com controles virtuais.
 
 ## Testes técnicos
 
-Utilize Node.js 22 ou superior e Python 3. O teste de navegador usa o pacote de desenvolvimento fixado no lockfile. Com o Chrome ou Chromium instalado:
+Com Node.js 22+ e o Chrome ou Chromium instalado:
 
 ```sh
-npm ci
-npm test
-npm run test:browser
-caddy validate --config Caddyfile
+npm test               # regras do jogo e gestos (Node)
+npm run typecheck      # TypeScript
+npm run test:browser   # joga os 9 pedidos no Chrome (pedido 1 pelos objetos 3D, demais pelo Caderno) + arremesso + reinício
+npm run test:xr        # entra em VR com um Quest 3 simulado e usa os controles para pegar, soltar e despejar
 ```
 
-O ensaio de navegador inicia um servidor local temporário em porta livre. Procura Chrome no caminho padrão do macOS e Chrome/Chromium em caminhos usuais do Linux. Em outras instalações, aponte `CHROME_BIN` para o executável. `BAR_TEST_URL` permite testar um servidor já iniciado. `BAR_EVIDENCE_DIR` grava as capturas da rodada em um diretório escolhido. Use um diretório novo por rodada para preservar o histórico.
+Os ensaios sobem um Vite temporário. Em outras instalações, aponte `CHROME_BIN` para o executável. `BAR_TEST_URL` testa um servidor já iniciado e `BAR_EVIDENCE_DIR` grava capturas da rodada.
 
 ## Validação humana e material da entrega
 
@@ -88,24 +101,22 @@ O ensaio de navegador inicia um servidor local temporário em porta livre. Procu
 ## Estrutura e tecnologia
 
 ```text
-Caddyfile                            Servidor HTTPS estático
-README.md                            Execução e materiais da entrega
-DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md   Especificação original
-public/
-  index.html, style.css              Página, comandos e apresentação
-  js/main.js, js/audio.js            Integração, HUD e áudio sintetizado
-  js/domain/                         Clientes, ingredientes, receitas e sessão
-  js/components/                     Ponte entre mouse, gestos XR e comandos
-  js/scene/                          Construção do bar, placas e objetos
-  assets/                            Reservado para assets do jogo
-  vendor/aframe/                     Runtime A-Frame 1.8.0 e licença MIT
-scripts/                             Verificação de integração com navegador
-tests/                               Testes unitários e de fluxo em Node.js
-docs/                                Planejamento, registros, ficha e moodboard
+index.html                         Página (barra, caderno, diálogos)
+src/
+  main.ts                          Integração da interface HTML com o jogo
+  app/App.tsx                      Canvas React Three Fiber + sessão WebXR (@react-three/xr)
+  domain/                          Regras: clientes, ingredientes, receitas, sessão (sem mudanças da v1)
+  interaction/                     Gestos (despejar, agitar, mexer, macerar), controles e física Rapier
+  scene/                           Bar em primitivas (greybox), placas, eventos ambientais
+  dev/xr-emulate.ts                Simulador de Quest 3 para desenvolvimento
+scripts/                           Ensaios de navegador e de VR simulada
+tests/                             Testes unitários em Node.js
+legacy/aframe/                     Protótipo original em A-Frame (preservado)
+docs/                              Planejamento, registros, moodboard e docs/v2 (redesign)
 ```
 
-A cena usa HTML, JavaScript em módulos, A-Frame/WebXR e primitivas de cor sólida. Web Audio produz sinais curtos de confirmação e erro. O navegador carrega a cópia local do [runtime oficial do A-Frame](https://aframe.io/releases/1.8.0/aframe.min.js). A licença acompanha a [distribuição local](public/vendor/aframe/LICENSE).
+Stack: Vite, TypeScript, React 19, React Three Fiber, @react-three/xr, Three.js, Rapier (física de arremesso) e Web Audio. As decisões da v2 estão em [docs/v2/visao.md](docs/v2/visao.md).
 
 ## Estado atual
 
-Há nove dos quinze clientes previstos. Os seis pedidos restantes são os de números 9 e 11–15 do devlog. Ingredientes corporais fictícios, efeitos sensoriais cumulativos, ambientação completa dos quatro atos, contrato e cutscene permanecem no backlog. A estação usa doses lógicas e encaixes de preparo. Os objetos arremessados usam corpos rígidos do cannon-es 0.20.0, incluído em public/vendor/cannon-es com a licença MIT. O progresso fica na memória da página. A duração da versão final, o desempenho físico no Quest 3 e a ergonomia seguem sem medição. Nomes e responsabilidades dos integrantes aguardam definição da equipe.
+Há nove dos quinze clientes previstos. Os seis pedidos restantes são os de números 9 e 11–15 do devlog. Ingredientes corporais fictícios, efeitos sensoriais cumulativos, ambientação completa dos quatro atos, contrato e cutscene permanecem no backlog. A cena ainda é o greybox de primitivas do protótipo, à espera do redesign visual. A estação usa doses lógicas e encaixes de preparo. Os objetos arremessados usam corpos rígidos do Rapier (as patas articuladas dos insetos do protótipo A-Frame ainda não foram portadas). O progresso fica na memória da página. A duração da versão final, o desempenho físico no Quest 3 e a ergonomia seguem sem medição. Nomes e responsabilidades dos integrantes aguardam definição da equipe.

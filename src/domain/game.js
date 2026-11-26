@@ -1,5 +1,5 @@
 import { ORDERS, SAMPLE_END_TIME } from './menu.js';
-import { emptyGlass, emptyShaker, prepare, validateDrink } from './preparation.js?v=manual-glass-1';
+import { emptyGlass, emptyShaker, prepare, validateDrink } from './preparation.js';
 
 export { BOOK_RECIPES, GLASSES, INGREDIENTS, ORDERS } from './menu.js';
 

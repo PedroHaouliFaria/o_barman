@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createGame, GLASSES, INGREDIENTS, ORDERS } from '../public/js/domain/game.js';
+import { createGame, GLASSES, INGREDIENTS, ORDERS } from '../src/domain/game.js';
 
 function command(game, type, fields) {
   return game.dispatch({ type, ...fields });

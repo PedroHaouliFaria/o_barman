@@ -6,7 +6,7 @@
 
 https://{$BAR_HOST:localhost}:{$BAR_PORT:8443} {
 	tls internal
-	root * ./public
+	root * ./dist
 	encode zstd gzip
 	file_server
 }

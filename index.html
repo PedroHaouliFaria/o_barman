@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0807" />
+    <title>On the House · Turno da noite</title>
+    <link rel="icon" href="data:," />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <main class="stage" aria-label="O balcão do bar">
+      <div id="canvas-root"></div>
+      <div class="vignette" aria-hidden="true"></div>
+    </main>
+
+    <header class="hud">
+      <div class="wordmark" aria-label="On the House">
+        <span class="diamond" aria-hidden="true"></span>On <em>the</em> House
+      </div>
+      <nav class="hud-actions" aria-label="Opções do jogo">
+        <button id="turn-control" disabled hidden>Abrir o bar</button>
+        <button id="sound" aria-pressed="true">Som</button>
+        <button id="open-notebook">Caderno</button>
+        <button id="fullscreen" hidden>Tela cheia</button>
+        <button id="help">Ajuda</button>
+        <button class="vr" id="enter-vr" disabled>Entrar em VR</button>
+      </nav>
+    </header>
+
+    <section id="title-card" class="title-card" aria-labelledby="title-heading">
+      <p class="kicker">Um turno de bartender · Realidade virtual</p>
+      <h1 id="title-heading">On <em>the</em> House</h1>
+      <p class="tagline">A casa paga a primeira dose.<br />A conta chega no fim da noite.</p>
+      <div class="title-actions">
+        <button id="start" class="seal-button" disabled>Abrir o bar</button>
+      </div>
+      <p class="title-note">
+        Atrás do balcão a noite inteira. Arraste para olhar, clique para pegar.<br />
+        Contém insetos, gosma e terror corporal fictícios.
+      </p>
+    </section>
+
+    <p id="feedback" class="toast" role="status" aria-live="polite">Preparando o balcão…</p>
+
+    <dialog id="notebook" class="notebook" aria-label="Caderno do bartender">
+      <form method="dialog"><button class="close" aria-label="Voltar ao balcão">Fechar</button></form>
+      <div class="spine" aria-hidden="true"></div>
+      <div class="leaf">
+        <div class="leaf-head"><span>Caderno do bartender</span><span id="folio">Ato I</span></div>
+
+        <div id="entry">
+          <h2 class="leaf-title">Antes de abrir</h2>
+          <p class="leaf-text">
+            Nove clientes esta noite. Cada um pede uma bebida; a receita está no livro à sua direita,
+            o pedido chega impresso na comanda. Sirva na mão de quem pediu.
+          </p>
+          <p class="leaf-meta"><span>Atendimentos</span><strong id="total-orders"></strong></p>
+        </div>
+
+        <div id="service" hidden>
+          <p class="leaf-kicker" id="order-no"></p>
+          <h2 class="leaf-title" id="customer"></h2>
+          <p class="leaf-quote" id="dialogue"></p>
+          <div class="ribbons" role="tablist" aria-label="Páginas do caderno">
+            <button data-page="order" aria-pressed="true">Pedido</button>
+            <button data-page="manual" aria-pressed="false">Receitas</button>
+            <button data-page="bench" aria-pressed="false">Bancada</button>
+          </div>
+
+          <section id="order" class="leaf-page">
+            <h3 id="drink"></h3>
+            <div id="contents" class="ledger"></div>
+            <button class="seal-button small" data-command="deliver">Servir o copo</button>
+          </section>
+
+          <section id="manual" class="leaf-page" hidden>
+            <label for="recipe">Receita</label>
+            <select id="recipe"></select>
+            <div id="recipe-text" class="recipe"></div>
+          </section>
+
+          <section id="bench" class="leaf-page" hidden>
+            <p class="leaf-text small">Preparo pelo caderno, com as mesmas regras do balcão.</p>
+            <div class="field">
+              <label for="glass-type">Copo</label>
+              <select id="glass-type"><option value="" disabled>Escolha um copo</option></select>
+            </div>
+            <div class="field">
+              <label for="target">Recipiente</label>
+              <select id="target">
+                <option value="glass">Copo</option>
+                <option value="shaker">Coqueteleira</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="ingredient">Ingrediente</label>
+              <div class="field-row">
+                <select id="ingredient"></select><button id="add">Adicionar</button>
+              </div>
+            </div>
+            <div id="event-tools" class="chips" hidden>
+              <button id="event-action"></button>
+              <button id="event-return" data-command="discardSpecial">Devolver ao bar</button>
+            </div>
+            <div class="chips">
+              <button data-command="muddle">Macerar</button>
+              <button data-command="stir">Mexer</button>
+              <button data-command="toggleLid" id="lid">Fechar tampa</button>
+              <button data-command="shake">Agitar</button>
+              <button data-command="transfer">Despejar no copo</button>
+              <button id="rinse">Lavar</button>
+            </div>
+            <p id="bench-stock" class="ledger small"></p>
+          </section>
+
+          <div class="leaf-foot">
+            <button id="pause">Pausar turno</button>
+            <button id="height">Ajustar altura</button>
+          </div>
+        </div>
+
+        <div id="end" hidden>
+          <h2 class="leaf-title">Casa fechada</h2>
+          <p class="leaf-text">O Homem Alongado levou o Martini. Por hoje, a casa está satisfeita.</p>
+          <button class="seal-button small" data-command="restart">Servir de novo</button>
+        </div>
+
+        <button id="credits" class="link">Créditos</button>
+      </div>
+    </dialog>
+
+    <dialog id="info" class="notebook card">
+      <form method="dialog"><button class="close" aria-label="Fechar">Fechar</button></form>
+      <div class="leaf" id="info-content"></div>
+    </dialog>
+    <noscript>Ative o JavaScript para abrir o bar.</noscript>
+  </body>
+</html>

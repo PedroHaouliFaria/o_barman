@@ -19,9 +19,9 @@ const VIEWS = {
   balcao: { name: 'Visto do cliente', pos: [0.4, 1.58, -3.3], look: [0, 1.3, 0.6] },
   estante: { name: 'Estante (atrás)', pos: [0, 1.62, 0], look: [0, 1.45, 1.3] },
   pessoas: { name: 'Pessoas', pos: [0, 1.62, -0.3], look: [0, 1.5, -1.6] },
-  rosto_realista: { name: 'Rosto realista', pos: [-0.72, 1.68, -1.12], look: [-0.72, 1.66, -1.6] },
-  rosto_cera: { name: 'Rosto cera', pos: [0, 1.8, -1.12], look: [0, 1.78, -1.6] },
-  rosto_marionete: { name: 'Rosto marionete', pos: [0.72, 1.7, -1.12], look: [0.72, 1.68, -1.6] },
+  rosto_1: { name: 'Pessoa 1 de perto', pos: [-0.72, 1.85, -0.85], look: [-0.72, 1.8, -1.6] },
+  rosto_2: { name: 'Pessoa 2 de perto', pos: [0, 1.5, -0.85], look: [0, 1.48, -1.6] },
+  rosto_3: { name: 'Pessoa 3 de perto', pos: [0.72, 1.68, -0.85], look: [0.72, 1.66, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
 } as const;
@@ -118,7 +118,7 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         // ?pessoas: os três estilos do Executivo lado a lado no balcão
         if (new URLSearchParams(location.search).has('pessoas')) {
           bar.frontCustomer.visible = false;
-          loadPeople(['realista', 'cera', 'marionete']).then((people) => {
+          loadPeople((new URLSearchParams(location.search).get('pessoas') || 'sombra,mascara,deco').split(',')).then((people) => {
             if (!alive) return;
             people.forEach((p, i) => {
               p.position.set((i - 1) * 0.72, 0, -1.6);

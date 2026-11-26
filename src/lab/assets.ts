@@ -94,6 +94,23 @@ function fixMaterials(root: THREE.Object3D) {
         return new THREE.MeshStandardMaterial({
           name, color: '#0b1424', roughness: 0.08, metalness: 0.2, emissive: new THREE.Color('#0a1830'), emissiveIntensity: 0.6,
         });
+      if (name === 'sombra' || name === 'sombra_fita') {
+        // silhueta: quase preta, com luz de contorno quente desenhando a forma
+        const shadow = new THREE.MeshStandardMaterial({ name, color: m.color, roughness: 0.9, envMapIntensity: 0 });
+        const rim = new THREE.Color(name === 'sombra' ? '#ff9a4a' : '#ff6a3a').multiplyScalar(0.45);
+        shadow.onBeforeCompile = (shader) => {
+          shader.uniforms.rimColor = { value: rim };
+          shader.fragmentShader = shader.fragmentShader
+            .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;')
+            .replace(
+              '#include <emissivemap_fragment>',
+              `#include <emissivemap_fragment>
+               float facing = abs(dot(normalize(normal), normalize(vViewPosition)));
+               totalEmissiveRadiance += rimColor * pow(1.0 - facing, 8.0);`,
+            );
+        };
+        return shadow;
+      }
       if (name.startsWith('filamento'))
         return new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffb15a').multiplyScalar(6), toneMapped: false });
       return m;

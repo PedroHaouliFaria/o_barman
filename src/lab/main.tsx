@@ -30,7 +30,7 @@ function Rig({ view }: { view: ViewId }) {
     return () => void camera.remove(listener);
   }, [camera]);
   const applied = useRef<ViewId | null>(null);
-  // Andar livre: WASD ou setas, Shift corre. Fica na altura dos olhos e dentro do salão.
+  // O jogo é parado atrás do balcão. Andar (WASD) só existe para inspeção, com ?livre na URL.
   const keys = useRef(new Set<string>());
   useEffect(() => {
     const down = (e: KeyboardEvent) => keys.current.add(e.code);
@@ -47,7 +47,9 @@ function Rig({ view }: { view: ViewId }) {
   }, []);
   const forward = useRef(new THREE.Vector3());
   const side = useRef(new THREE.Vector3());
+  const free = useRef(new URLSearchParams(location.search).has('livre'));
   useFrame((_, dt) => {
+    if (!free.current) return; // o jogador não anda no jogo; andar só com ?livre (inspeção)
     const k = keys.current;
     const ahead = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
     const strafe = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
@@ -215,7 +217,7 @@ function Lab() {
             ))}
           </ul>
           <p className="refs">Referências: {style.references}</p>
-          <p className="keys">Arraste para olhar · WASD anda (Shift corre) · 1 2 3 estilos · V vistas · H esconde o painel</p>
+          <p className="keys">Arraste para olhar (você fica parado, como no jogo) · V vistas · H esconde o painel</p>
         </aside>
       )}
     </>

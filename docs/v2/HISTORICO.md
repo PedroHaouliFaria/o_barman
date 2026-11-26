@@ -45,3 +45,6 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 → Decisão registrada em [visao.md](visao.md): Âmbar Noturno é o estilo do jogo inteiro, sem trocar de estilo ao longo da noite (a degradação por ato fica em aberto, "ir vendo ao longo"). Próximo foco: qualidade dos assets.
 **Felipe:** "tem algum site interativo que você fez que eu posso abrir e ver com mais detalhes, tipo me mexendo?"
 → Laboratório ganhou andar livre (WASD/setas, Shift corre).
+
+**Felipe (26/11/2026), com print da vista do bartender:** "entenda que o take que eu gosto é esse com a luz em cima assim. e mais ou menos assim com mais detalhes. e entenda nós NÃO VAMOS NOS MEXER, vamos ficar parados o JOGO INTEIRO"
+→ Print salvo em [estilos/referencia_felipe_take_bartender_v1.webp](estilos/referencia_felipe_take_bartender_v1.webp). Decisão em [visao.md](visao.md): jogador fixo, esse enquadramento é a referência e recebe todo o detalhe. Laboratório: andar desligado (só com `?livre` para inspeção); olhar em volta continua.

@@ -12,6 +12,7 @@ Documento vivo da reconstrução do jogo. Versões antigas vão para `docs/v2/hi
 | 26/11/2026 | **O pianista é a trilha sonora do jogo** (ver seção 3). | Ideia do Felipe. |
 | 26/11/2026 | **Migração para R3F concluída** com a cena greybox idêntica à v1. Próximo passo: redesign visual. | Base pronta para modelos .glb, luz e pós-processamento. |
 | 26/11/2026 | **Estilo visual: Âmbar Noturno, mantido igual do começo ao fim.** Assets atuais (pessoas, garrafas, objetos) ainda não aprovados. | "não descaradamente terror e sim super climatizado e ambientalizado" (Felipe). Ver [estilos_v1.md](estilos_v1.md). |
+| 26/11/2026 | **O jogador fica parado atrás do balcão o jogo inteiro.** O enquadramento de referência é a vista do bartender com a luminária logo acima (imagem em `estilos/referencia_felipe_take_bartender_v1.webp`). Todo o detalhe vai para o que se vê desse ponto. | "o take que eu gosto é esse com a luz em cima assim [...] nós NÃO VAMOS NOS MEXER" (Felipe). |
 
 ## 2. Stack técnica
 

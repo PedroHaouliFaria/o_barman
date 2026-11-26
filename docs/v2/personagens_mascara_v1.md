@@ -1,5 +1,7 @@
 # Personagens no estilo Máscara · ficha v1 (26/11/2026)
 
+> **Status (26/11/2026):** os 15 clientes e o pianista foram gerados em rascunho (`art/blender/build_mascaras.py`). Cenas: `estilos.html?pessoas=ato1`, `ato2`, `ato3`, `ato4`.
+
 Proposta para aprofundar com o Felipe **antes** de gerar o guarda-roupa. Base: manual (devlog seção 5) e [personagens-e-curva.md](personagens-e-curva.md). Estilo aprovado: bonecos teatrais de cabeça grande com máscara/cabeça de porcelana, gola alta (sem pescoço à mostra), luvas, roupas de época com silhueta própria.
 
 ## Regras do estilo

@@ -27,6 +27,15 @@ const VIEWS = {
   aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
   executivo_lado: { name: 'Executivo de lado', pos: [0.75, 1.55, -1.05], look: [0, 1.4, -1.6] },
   aposentado_lado: { name: 'Aposentado de lado', pos: [-0.75, 1.4, -4.4], look: [-1.32, 1.25, -4.7] },
+  p1: { name: 'Pessoa à esquerda', pos: [-1.2, 1.7, -0.62], look: [-1.35, 1.55, -1.62] },
+  p2: { name: 'Pessoa centro-esquerda', pos: [-0.42, 1.85, -0.6], look: [-0.45, 1.75, -1.62] },
+  p3: { name: 'Pessoa centro-direita', pos: [0.42, 1.62, -0.62], look: [0.45, 1.5, -1.62] },
+  p4: { name: 'Pessoa à direita', pos: [1.2, 1.62, -0.62], look: [1.35, 1.5, -1.62] },
+  q1: { name: 'Ato IV esquerda', pos: [-0.8, 1.62, -0.62], look: [-0.95, 1.5, -1.62] },
+  q2: { name: 'Ato IV centro', pos: [0, 1.8, -0.55], look: [0, 1.68, -1.62] },
+  q3: { name: 'Ato IV direita', pos: [0.8, 1.62, -0.62], look: [0.95, 1.52, -1.62] },
+  baixo: { name: 'Corpo inteiro', pos: [0, 1.3, 0.35], look: [0, 0.95, -1.62] },
+  piano: { name: 'Pianista', pos: [1.9, 1.6, -5.6], look: [3.4, 1.1, -7.4] },
   cavalheiro: { name: 'Cavalheiro de perto', pos: [0, 1.68, -0.72], look: [0, 1.58, -1.6] },
   encharcado: { name: 'Encharcado de perto', pos: [0.72, 1.62, -0.78], look: [0.95, 1.48, -1.65] },
   encharcado_corpo: { name: 'Encharcado inteiro', pos: [0.4, 1.5, -0.3], look: [0.95, 0.9, -1.65] },
@@ -138,7 +147,38 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         bar.applyAssets(assets);
         // ?pessoas: os três estilos do Executivo lado a lado no balcão
         const which = new URLSearchParams(location.search).get('pessoas');
-        if (which === 'ato2') {
+        // em qualquer cena do estilo Máscara, o pianista também é de porcelana (de costas)
+        if (which && which !== '' && !['sombra', 'mascara', 'deco'].some((k) => which.includes(k))) {
+          loadModels(['mascara_pianista']).then(([pianista]) => {
+            if (!alive) return;
+            const f = bar.pianistFigure;
+            pianista.position.copy(f.position);
+            pianista.rotation.copy(f.rotation);
+            f.visible = false;
+            f.parent!.add(pianista);
+          });
+        }
+        const atBar = (models: THREE.Object3D[], xs: number[], turns: number[] = []) =>
+          models.forEach((m, i) => {
+            m.position.set(xs[i], 0, -1.62);
+            m.rotation.y = Math.PI + (turns[i] ?? 0);
+            bar.root.add(m);
+          });
+        if (which === 'ato3') {
+          // Ato III: Dama Pálida, Homem Alongado, Desavisada e Cego no balcão
+          bar.frontCustomer.visible = false;
+          loadModels(['mascara_dama', 'mascara_alongado', 'mascara_desavisada', 'mascara_cego']).then((ms) => {
+            if (!alive) return;
+            atBar(ms, [-1.35, -0.45, 0.45, 1.35], [0.25, 0, 0, -0.25]);
+          });
+        } else if (which === 'ato4') {
+          // Ato IV: Sem-Rosto, Proprietário e Sorridente no balcão
+          bar.frontCustomer.visible = false;
+          loadModels(['mascara_semrosto', 'mascara_proprietario', 'mascara_sorridente']).then((ms) => {
+            if (!alive) return;
+            atBar(ms, [-0.95, 0, 0.95], [0.25, 0, -0.25]);
+          });
+        } else if (which === 'ato2') {
           // Ato II: Detetive (vira de costas), Cavalheiro e Encharcado no balcão; Universitário à mesa
           bar.frontCustomer.visible = false;
           loadModels(['mascara_detetive', 'mascara_cavalheiro', 'mascara_encharcado', 'mascara_universitario', 'mascara_aposentado']).then(

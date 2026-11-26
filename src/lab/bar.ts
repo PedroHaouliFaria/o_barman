@@ -22,6 +22,8 @@ export interface BarScene {
   frontCustomer: THREE.Object3D;
   /** manequins sentados nas mesas, na ordem das mesas */
   tableFigures: THREE.Object3D[];
+  /** pianista provisório (de costas, no banco do piano) */
+  pianistFigure: THREE.Object3D;
 }
 
 export function buildBar(style: StyleDef): BarScene {
@@ -431,6 +433,7 @@ export function buildBar(style: StyleDef): BarScene {
     root,
     frontCustomer,
     tableFigures,
+    pianistFigure: pianist.root,
     applyAssets,
     door,
     pianoAnchor,

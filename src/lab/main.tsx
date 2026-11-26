@@ -6,16 +6,19 @@ import { ToneMappingMode } from 'postprocessing';
 import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as THREE from 'three';
+import { loadBarAssets } from './assets';
 import { createLabAudio } from './audio';
 import { buildBar, type BarScene } from './bar';
 import { STYLES, type StyleId } from './styles';
 import './lab.css';
 
 const VIEWS = {
-  bartender: { name: 'Bartender', pos: [0, 1.62, 0], look: [0, 1.05, -5] },
+  bartender: { name: 'Bartender', pos: [0, 1.62, 0], look: [0, 1.3, -5] },
   salao: { name: 'Salão', pos: [4.7, 2.75, 0.9], look: [-1.4, 0.7, -6.2] },
   fundo: { name: 'Porta e piano', pos: [0.4, 1.62, -2.9], look: [0.3, 1.2, -9.8] },
   balcao: { name: 'Visto do cliente', pos: [0.4, 1.58, -3.3], look: [0, 1.3, 0.6] },
+  estante: { name: 'Estante (atrás)', pos: [0, 1.62, 0], look: [0, 1.45, 1.3] },
+  bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
 } as const;
 type ViewId = keyof typeof VIEWS;
 
@@ -99,6 +102,34 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
   const style = STYLES[styleId];
   const bar = useMemo(() => buildBar(style), [style]);
   const wasOpen = useRef(false);
+  const { gl, scene } = useThree();
+  // Modelos do Blender + reflexo do próprio bar no vidro (cubemap renderizado uma vez).
+  useEffect(() => {
+    let alive = true;
+    loadBarAssets()
+      .then((assets) => {
+        if (!alive) return;
+        bar.applyAssets(assets);
+        requestAnimationFrame(() => {
+          if (!alive) return;
+          const target = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+          const cube = new THREE.CubeCamera(0.05, 20, target);
+          cube.position.set(0, 1.35, -0.8);
+          scene.add(cube);
+          cube.update(gl, scene);
+          scene.remove(cube);
+          const pmrem = new THREE.PMREMGenerator(gl);
+          scene.environment = pmrem.fromCubemap(target.texture).texture;
+          scene.environmentIntensity = 0.6;
+          pmrem.dispose();
+        });
+      })
+      .catch((e) => console.error('Falha ao carregar modelos', e));
+    return () => {
+      alive = false;
+      scene.environment = null;
+    };
+  }, [bar, gl, scene]);
   useEffect(() => {
     onBar(bar);
     if (sound) audio.start(style, bar.pianoAnchor, bar.murmurAnchors, bar.strike);

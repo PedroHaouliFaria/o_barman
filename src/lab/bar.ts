@@ -2,6 +2,7 @@
 // testar estilos. Unidades em metros; o jogador (bartender) fica na origem
 // olhando para -Z, como no jogo.
 import * as THREE from 'three';
+import type { BarAssets } from './assets';
 import { ink, makeMaterial, type Role, type StyleDef } from './styles';
 
 type V3 = [number, number, number];
@@ -15,6 +16,8 @@ export interface BarScene {
   doorAnchor: THREE.Object3D;
   /** chamado quando uma tecla do piano é tocada (anima as mãos). */
   strike(hand: 0 | 1): void;
+  /** troca as primitivas pelos modelos do Blender */
+  applyAssets(assets: BarAssets): void;
 }
 
 export function buildBar(style: StyleDef): BarScene {
@@ -22,6 +25,13 @@ export function buildBar(style: StyleDef): BarScene {
   root.name = 'bar';
   const animators: ((t: number, dt: number) => void)[] = [];
   const mat = (role: Role, color?: string) => makeMaterial(style, role, color);
+  // lugares que recebem modelos do Blender quando eles carregam
+  const slots = {
+    counter: null as THREE.Object3D | null,
+    pendants: [] as { group: THREE.Group; placeholder: THREE.Group; light: THREE.PointLight }[],
+    glasses: [] as { group: THREE.Group; kind: string }[],
+    shelf: [] as THREE.Group[],
+  };
 
   function add<T extends THREE.Object3D>(parent: THREE.Object3D, obj: T, at: V3 = [0, 0, 0], rotY = 0): T {
     obj.position.set(...at);
@@ -62,6 +72,7 @@ export function buildBar(style: StyleDef): BarScene {
 
   // ---------------- balcão (posto do jogador) ----------------
   const bar = group(root);
+  slots.counter = bar;
   box(bar, [6.8, 1.02, 0.62], [0, 0.51, -0.9], 'wood');
   for (let x = -3.2; x <= 3.2; x += 0.8) box(bar, [0.06, 0.9, 0.02], [x, 0.5, -1.215], 'woodDark');
   box(bar, [7.0, 0.07, 0.8], [0, 1.055, -0.88], 'counterTop');
@@ -82,8 +93,14 @@ export function buildBar(style: StyleDef): BarScene {
     ring.rotation.x = Math.PI / 2;
   }
   // copos e garrafas na bancada
-  for (const [x, z, h] of [[-0.3, -0.72, 0.16], [0.55, -0.68, 0.11], [-0.65, -0.62, 0.13]] as V3[])
-    mesh(root, cyl(0.04, 0.035, h, 14), 'bottle', [x, 1.09 + h / 2, z], 0, '#9fb8b0');
+  for (const [x, z, h, kind] of [
+    [-0.18, -0.74, 0.16, 'highball'], [0.12, -0.7, 0.11, 'rocks'], [0.4, -0.86, 0.13, 'coupe'],
+    [-0.45, -0.9, 0.3, 'garrafa:rum'], [-0.62, -0.78, 0.2, 'garrafa:cola'], [0.66, -0.72, 0.2, 'garrafa:lemon_juice'],
+  ] as [number, number, number, string][]) {
+    const g = group(root, [x, 1.09, z]);
+    mesh(g, cyl(0.04, 0.035, h, 14), 'bottle', [0, h / 2, 0], 0, '#9fb8b0');
+    slots.glasses.push({ group: g, kind });
+  }
 
   // ---------------- estante atrás do jogador ----------------
   const back = group(root, [0, 0, 1.25]);
@@ -99,6 +116,7 @@ export function buildBar(style: StyleDef): BarScene {
       const x = -2.15 + i * 0.25 + (row % 2) * 0.1;
       const tall = 0.24 + ((i * 7 + row * 3) % 5) * 0.025;
       const g = group(back, [x, y, 0.18]);
+      slots.shelf.push(g);
       const glass = mesh(g, cyl(0.045, 0.048, tall, 12), 'bottle', [0, tall / 2, 0], 0, liquids[(i + row * 3) % liquids.length]);
       glass.castShadow = false;
       mesh(g, cyl(0.016, 0.03, 0.08, 10), 'bottle', [0, tall + 0.04, 0], 0, liquids[(i + row * 3) % liquids.length]);
@@ -110,9 +128,10 @@ export function buildBar(style: StyleDef): BarScene {
   const flickers: { light: THREE.Light; base: number; seed: number }[] = [];
   function pendant(at: V3, shadow: boolean) {
     const g = group(root, at);
-    mesh(g, cyl(0.006, 0.006, H - at[1], 6), 'metal', [0, (H - at[1]) / 2, 0]);
-    mesh(g, cyl(0.07, 0.24, 0.2, 24), 'lampShade', [0, 0, 0]);
-    mesh(g, new THREE.SphereGeometry(0.035, 12, 8), 'glow', [0, -0.07, 0]);
+    const ph = group(g);
+    mesh(ph, cyl(0.006, 0.006, H - at[1], 6), 'metal', [0, (H - at[1]) / 2, 0]);
+    mesh(ph, cyl(0.07, 0.24, 0.2, 24), 'lampShade', [0, 0, 0]);
+    mesh(ph, new THREE.SphereGeometry(0.035, 12, 8), 'glow', [0, -0.07, 0]);
     const light = new THREE.PointLight(style.light.pendant[0], style.light.pendant[1], 6, 2);
     light.position.set(0, -0.15, 0);
     if (shadow && style.shadows) {
@@ -122,6 +141,7 @@ export function buildBar(style: StyleDef): BarScene {
     }
     g.add(light);
     flickers.push({ light, base: light.intensity, seed: at[0] * 13.1 + at[2] });
+    slots.pendants.push({ group: g, placeholder: ph, light });
   }
   pendant([-1.8, 2.45, -0.95], true);
   pendant([0, 2.45, -0.95], true);
@@ -158,7 +178,9 @@ export function buildBar(style: StyleDef): BarScene {
       add(t, f.root, [Math.sin(a) * 0.68, 0, Math.cos(a) * 0.68], a);
       f.root.userData.look = p.look;
       animators.push((time, dt) => f.talk(time, dt));
-      for (let i = 0; i < 2; i++) mesh(t, cyl(0.035, 0.03, 0.12, 12), 'bottle', [Math.sin(a) * 0.25, 0.83, Math.cos(a) * 0.25], 0, '#b9c8bf');
+      const drink = group(t, [Math.sin(a) * 0.25, 0.77, Math.cos(a) * 0.25]);
+      mesh(drink, cyl(0.035, 0.03, 0.12, 12), 'bottle', [0, 0.06, 0], 0, '#b9c8bf');
+      slots.glasses.push({ group: drink, kind: p.seat % 2 ? 'rocks' : 'highball' });
     }
     murmurAnchors.push(t);
     return t;
@@ -336,8 +358,40 @@ export function buildBar(style: StyleDef): BarScene {
     });
   }
 
+  function applyAssets(assets: BarAssets) {
+    const swap = (holder: THREE.Object3D, model: THREE.Object3D) => {
+      for (const c of holder.children) c.visible = false;
+      holder.add(model);
+    };
+    if (slots.counter) {
+      slots.counter.visible = false;
+      root.add(assets.balcao.clone());
+    }
+    for (const p of slots.pendants) {
+      p.placeholder.visible = false;
+      const lamp = assets.luminaria.clone();
+      lamp.position.y = 0.0;
+      p.group.add(lamp);
+      p.light.position.set(0, -0.085, 0);
+    }
+    for (const g of slots.glasses) {
+      const model = g.kind.startsWith('garrafa:') ? assets.garrafas[g.kind.slice(8)] : assets.copos[g.kind];
+      if (!model) continue;
+      const clone = model.clone();
+      // garrafas da bancada com o rótulo virado para o bartender
+      if (g.kind.startsWith('garrafa:')) clone.rotation.y = Math.PI;
+      swap(g.group, clone);
+    }
+    const ids = Object.keys(assets.garrafas);
+    slots.shelf.forEach((g, i) => {
+      const model = assets.garrafas[ids[(i * 7) % ids.length]].clone();
+      swap(g, model);
+    });
+  }
+
   return {
     root,
+    applyAssets,
     door,
     pianoAnchor,
     murmurAnchors,

@@ -48,3 +48,9 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe (26/11/2026), com print da vista do bartender:** "entenda que o take que eu gosto é esse com a luz em cima assim. e mais ou menos assim com mais detalhes. e entenda nós NÃO VAMOS NOS MEXER, vamos ficar parados o JOGO INTEIRO"
 → Print salvo em [estilos/referencia_felipe_take_bartender_v1.webp](estilos/referencia_felipe_take_bartender_v1.webp). Decisão em [visao.md](visao.md): jogador fixo, esse enquadramento é a referência e recebe todo o detalhe. Laboratório: andar desligado (só com `?livre` para inspeção); olhar em volta continua.
+
+**Felipe (26/11/2026):** "Blender por código + CC0" → depois: "sobre o cc0, vai de você, mas SIM quero SOMENTE código por blender"
+→ Assets 100% gerados por código no Blender (modelos, texturas e rótulos), sem baixar nada de fora. Roda no Windows (simaonote).
+**Felipe:** "quero que você já remova do localhost atual essa visão de teste de seleção e textos, quero apenas a ambientalização com o piano"
+→ `estilos.html` mostra só o bar (Âmbar Noturno, vista do bartender); um clique liga o piano. Controles de teste só com `?debug`.
+→ Primeiros assets por código ([art/README.md](../../art/README.md)): luminária (cúpula âmbar, lâmpada de filamento, latão), balcão (tampo de nogueira, apoio de couro, almofadas, trilho de latão, tapete), copos (highball, rocks, coupe, caneca de cobre) e 15 garrafas com rótulos fictícios. Gerados no Blender do Windows, em `public/models/`. Capturas em `estilos/assets_balcao_*_v1.jpg`. Ainda provisórios: pessoas, estante do fundo, salão.

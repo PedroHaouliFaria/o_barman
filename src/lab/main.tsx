@@ -25,6 +25,8 @@ const VIEWS = {
   mesa: { name: 'Mesa da Turista', pos: [-0.55, 1.5, -2.55], look: [-1.75, 1.05, -4.15] },
   turista: { name: 'Turista de frente', pos: [-1.95, 1.35, -4.75], look: [-1.42, 1.2, -3.45] },
   aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
+  executivo_lado: { name: 'Executivo de lado', pos: [0.75, 1.55, -1.05], look: [0, 1.4, -1.6] },
+  aposentado_lado: { name: 'Aposentado de lado', pos: [-0.75, 1.4, -4.4], look: [-1.32, 1.25, -4.7] },
   executivo: { name: 'Executivo de perto', pos: [0, 1.55, -0.75], look: [0, 1.45, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },

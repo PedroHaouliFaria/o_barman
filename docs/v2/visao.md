@@ -49,7 +49,29 @@ Rascunho de progressão (a definir com o Felipe):
 | IV · Degradação | 01h–02h | Piano quase irreconhecível, fragmentos, silêncios. | Visual claramente não-humano. |
 | Epílogo | 02h | Silêncio ou uma última nota no contrato. | A definir. |
 
-## 4. Levantamento: o que já está documentado sobre a noite (26/11/2026)
+## 4. Consequências corporais: literais, com visual incrível e animação
+
+Nas palavras do Felipe (26/11/2026):
+
+> "basicamente tirou a orelha, para de ouvir do lado da orelha no fone; tirou o olho, para de ver daquele olho. entenda que tudo com um visual incrível e animação"
+
+Isso **substitui** a versão "suavizada" do devlog (6.5), que pedia máscara nos dois olhos "sem apagar um display inteiro". Agora a perda é real e do lado certo:
+
+| Sacrifício | Efeito persistente (v2) | Como fazer em WebXR |
+|---|---|---|
+| Sangue (9) | Batimento cardíaco audível e vinheta pulsando com ele | Pós-processamento + loop de áudio sincronizado |
+| Olho (12) | **Um olho do headset fica escuro** (o lado escolhido/tirado) | Renderização por olho: camadas do Three.js (layer só do olho esquerdo/direito) com um "fechamento" animado na lente daquele olho |
+| Orelha (13) | **Para de ouvir daquele lado** no fone/alto-falante do Quest | Web Audio: separar canais e zerar o lado perdido no mix final (inclusive o piano e as vozes) |
+| Dentes (14) | Respiração e voz do próprio jogador alteradas | Sons de respiração/vocalização do protagonista com filtro |
+| Dedo (15) | A mão virtual passa a ter um dedo a menos, em todas as animações | Variante do modelo da mão (controle e hand tracking) |
+
+Regras:
+- **Cada sacrifício é um momento**, com animação própria (não um corte seco): o objeto ritual, o gesto, a parte do corpo virando um ingrediente estilizado, e o efeito se instalando aos poucos (ex.: a visão daquele olho se fechando como uma pálpebra).
+- As perdas **se acumulam até o fim** e aparecem no epílogo ("a visão escurece mantendo as limitações anteriores").
+- Informação essencial nunca depende só do olho ou da orelha perdidos (legendas e dicas continuam visíveis/audíveis).
+- **Conforto:** manter uma opção que troca o olho apagado por uma versão parcial, para quem sentir desconforto. A apresentação padrão é a literal.
+
+## 5. Levantamento: o que já está documentado sobre a noite (26/11/2026)
 
 Fontes: `docs/ficha-do-projeto.md`, `docs/planejamento.md`, `docs/moodboard/index.html`, `public/js/domain/menu.js`.
 
@@ -67,7 +89,7 @@ Fontes: `docs/ficha-do-projeto.md`, `docs/planejamento.md`, `docs/moodboard/inde
 - **Referências:** Manet (Bar aux Folies-Bergère), Van Gogh (Café à noite), Kalf (natureza-morta), Redon (Aranha sorridente), VA-11 HALL-A (ritmo de atendimento), The Lighthouse (tensão do último ato).
 
 ### Não documentado / em aberto
-- **O devlog com o roteiro completo** (`DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md`) é citado mas não está no repositório: faltam falas, receitas e ingredientes dos pedidos 9 e 11–15.
+- ~~Devlog com o roteiro completo~~ → recebido em 26/11 e salvo na raiz do repo.
 - **As 5 consequências persistentes:** quais são exatamente, como aparecem no corpo/visão/audição do jogador e como ficam confortáveis em VR.
 - **Como os sacrifícios corporais funcionam como interação** (olho, orelha, dentes, dedo): só existe a diretriz de serem "abstratos" e não impedirem de continuar.
 - **O que acontece se o jogador se recusar ou errar muito:** não há escolha, final alternativo nem derrota.

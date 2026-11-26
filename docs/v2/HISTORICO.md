@@ -20,3 +20,9 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe:** "cria a nova branch sim como redesign visual"
 → Branch `feat/redesign-visual`.
+
+**Felipe (consequências):** "basicamente tirou a orelha, para de ouvir do lado da orelha no fone; tirou o olho, para de ver daquele olho. entenda que tudo com um visual incrível e animação"
+→ Regra nova em [visao.md](visao.md), seção 4. Substitui a versão suavizada do devlog 6.5.
+
+**Felipe enviou o devlog e a conversa com o agente anterior** (curva de estranheza, 15 personagens; "gostei desses personagens").
+→ Devlog original salvo em [DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md](../../DEVLOG_SPIRITS_AND_SPIRITS_CODEX.md) (texto recuperado de erro de codificação, conteúdo intacto). Detalhes de personagens e curva em [personagens-e-curva.md](personagens-e-curva.md).

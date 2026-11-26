@@ -140,10 +140,26 @@ function Lab() {
   const [styleId, setStyle] = useState<StyleId>(STYLES[initial] ? initial : 'ambar');
   const [view, setView] = useState<ViewId>(VIEWS[initialView] ? initialView : 'bartender');
   const [sound, setSound] = useState(false);
-  const [panel, setPanel] = useState(!new URLSearchParams(location.search).has('limpo'));
+  const debug = new URLSearchParams(location.search).has('debug');
+  const start = () => {
+    if (listener.context.state === 'suspended') listener.context.resume();
+    setSound(true);
+  };
+  // O navegador só libera áudio depois de um gesto: qualquer clique liga o piano.
+  useEffect(() => {
+    const first = () => start();
+    window.addEventListener('pointerdown', first, { once: true });
+    window.addEventListener('keydown', first, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', first);
+      window.removeEventListener('keydown', first);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const style = STYLES[styleId];
   const onBar = useMemo(() => (b: BarScene) => ((window as any).__lab = { bar: b }), []);
   useEffect(() => {
+    if (!debug) return;
     const key = (e: KeyboardEvent) => {
       const ids = Object.keys(STYLES) as StyleId[];
       if (['1', '2', '3'].includes(e.key)) setStyle(ids[Number(e.key) - 1]);
@@ -151,17 +167,17 @@ function Lab() {
         const vs = Object.keys(VIEWS) as ViewId[];
         setView((v) => vs[(vs.indexOf(v) + 1) % vs.length]);
       }
-      if (e.key === 'h') setPanel((p) => !p);
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, []);
+  }, [debug]);
   useEffect(() => {
+    if (!debug) return;
     const url = new URL(location.href);
     url.searchParams.set('estilo', styleId);
     url.searchParams.set('vista', view);
     history.replaceState(null, '', url);
-  }, [styleId, view]);
+  }, [styleId, view, debug]);
 
   return (
     <>
@@ -181,44 +197,26 @@ function Lab() {
           {!new URLSearchParams(location.search).has('semfx') && <Effects styleId={styleId} />}
         </Canvas>
       </div>
-      <header className="bar-top">
-        <span className="brand">Spirits &amp; Spirits · Laboratório de estilos</span>
-        <nav>
-          {(Object.keys(STYLES) as StyleId[]).map((id, i) => (
-            <button key={id} aria-pressed={id === styleId} onClick={() => setStyle(id)}>
-              {i + 1}. {STYLES[id].name}
-            </button>
-          ))}
-          <span className="sep" />
-          {(Object.keys(VIEWS) as ViewId[]).map((id) => (
-            <button key={id} aria-pressed={id === view} onClick={() => setView(id)}>
-              {VIEWS[id].name}
-            </button>
-          ))}
-          <span className="sep" />
-          <button
-            aria-pressed={sound}
-            onClick={() => {
-              if (listener.context.state === 'suspended') listener.context.resume();
-              setSound((s) => !s);
-            }}
-          >
-            {sound ? 'Som ligado' : 'Ligar som'}
-          </button>
-        </nav>
-      </header>
-      {panel && (
-        <aside className="card">
-          <h1>{style.name}</h1>
-          <p className="tag">{style.tagline}</p>
-          <ul>
-            {style.description.map((d) => (
-              <li key={d}>{d}</li>
+      {debug && (
+        <header className="bar-top">
+          <nav>
+            {(Object.keys(STYLES) as StyleId[]).map((id, i) => (
+              <button key={id} aria-pressed={id === styleId} onClick={() => setStyle(id)}>
+                {i + 1}. {STYLES[id].name}
+              </button>
             ))}
-          </ul>
-          <p className="refs">Referências: {style.references}</p>
-          <p className="keys">Arraste para olhar (você fica parado, como no jogo) · V vistas · H esconde o painel</p>
-        </aside>
+            {(Object.keys(VIEWS) as ViewId[]).map((id) => (
+              <button key={id} aria-pressed={id === view} onClick={() => setView(id)}>
+                {VIEWS[id].name}
+              </button>
+            ))}
+          </nav>
+        </header>
+      )}
+      {!sound && (
+        <button className="enter" onClick={start} aria-label="Entrar no bar com som">
+          clique para ouvir o piano
+        </button>
       )}
     </>
   );

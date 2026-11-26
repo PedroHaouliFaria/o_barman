@@ -16,10 +16,10 @@ const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 for (const estilo of ['ambar', 'fita', 'gravura']) {
   for (const vista of ['bartender', 'salao', 'fundo', 'balcao']) {
-    await page.goto(`${base}/estilos.html?estilo=${estilo}&vista=${vista}&limpo`);
+    await page.goto(`${base}/estilos.html?estilo=${estilo}&vista=${vista}&debug`);
     // a porta abre entre 9 s e 15 s do ciclo: a vista do fundo espera por ela
     await page.waitForTimeout(vista === 'fundo' ? 12500 : 5000);
-    await page.evaluate(() => (document.querySelector('.bar-top').style.display = 'none'));
+    await page.evaluate(() => document.querySelectorAll('.bar-top, .enter').forEach((el) => (el.style.display = 'none')));
     await page.screenshot({ path: `${out}/${estilo}_${vista}_${version}.jpg`, quality: 90 });
     console.log(estilo, vista);
   }

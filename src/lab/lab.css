@@ -16,3 +16,7 @@ nav button[aria-pressed='true'] { background: #e6bb76; color: #1b1210; border-co
 .card li { margin-bottom: 6px; }
 .card .refs { margin: 0 0 6px; color: #b7a78a; font-size: 13px; }
 .card .keys { margin: 0; color: #8a7c66; font-size: 12px; }
+.enter { position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%); background: none; border: 0; color: #e6bb76;
+  font: italic 15px Georgia, serif; letter-spacing: .08em; opacity: .55; cursor: pointer; animation: breathe 3.5s ease-in-out infinite; }
+.enter:hover { opacity: .9; }
+@keyframes breathe { 50% { opacity: .25; } }

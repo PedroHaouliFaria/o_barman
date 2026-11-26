@@ -638,3 +638,8 @@ body.in-xr .vignette,
 body.in-xr .hud .hud-actions button:not(.vr) {
   display: none !important;
 }
+
+/* Enquanto os modelos carregam, a tela de abertura cobre tudo (nada do bar pela metade). */
+body.loading .title-card {
+  background: var(--night);
+}

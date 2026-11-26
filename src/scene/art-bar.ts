@@ -57,7 +57,7 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
   });
 
   // Pianista de porcelana (estilo Máscara), de costas no banco do piano.
-  loadModels(['mascara_pianista']).then(([pianist]) => {
+  const pianistLoaded = loadModels(['mascara_pianista']).then(([pianist]) => {
     const f = bar.pianistFigure;
     pianist.position.copy(f.position);
     pianist.rotation.copy(f.rotation);
@@ -98,7 +98,7 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
         l.visible = true;
         const shadow = (l as THREE.PointLight).shadow;
         if (shadow && l.castShadow) {
-          const size = quality === 'vr' ? 512 : 1024;
+          const size = 1024; // mesma sombra no computador e no Quest
           if (shadow.mapSize.x !== size) {
             shadow.mapSize.set(size, size);
             shadow.map?.dispose();
@@ -133,6 +133,7 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
       ready.then(() => applyQuality(gl));
     },
     seatedLoaded,
+    pianistLoaded,
     tablePeople,
     merged: () => mergeReport,
     /** Banqueta extra para o cliente sentado no balcão (null até os modelos carregarem). */

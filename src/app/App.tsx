@@ -89,8 +89,8 @@ function Atmosphere() {
   useEffect(() => {
     gl.toneMapping = light ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
     gl.toneMappingExposure = 1;
-    // Foveação leve no Quest: a borda da visão perde um pouco de resolução, o centro não.
-    if (inXR) gl.xr.setFoveation(0.3);
+    // Imagem cheia em toda a visão (sem foveação): nitidez antes de desempenho.
+    if (inXR) gl.xr.setFoveation(0);
   }, [gl, inXR, light]);
   useEffect(() => {
     xrPost.current = createXRPost(gl);
@@ -129,7 +129,9 @@ export function App(props: Props) {
       onCreated={({ gl }) => {
         gl.setClearColor('#0b0807');
         // ?leve (testes no simulador sem GPU): menos pixels por olho.
-        if (new URLSearchParams(location.search).has('leve')) gl.xr.setFramebufferScaleFactor(0.2);
+        // Resolução por olho acima da recomendada pelo Quest (1,25x): menos serrilhado e texto
+        // mais nítido. ?leve (ensaios no simulador sem GPU) usa o mínimo.
+        gl.xr.setFramebufferScaleFactor(new URLSearchParams(location.search).has('leve') ? 0.2 : 1.25);
       }}
     >
       <XR store={xrStore}>

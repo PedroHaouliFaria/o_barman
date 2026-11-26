@@ -92,8 +92,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   function drawCustomer(index: number, visible: boolean) {
     drawBlocks(index, visible);
     person.visible = true;
-    const masked = cast.show(index, visible);
-    for (const part of blockParts) part.visible = visible && !masked;
+    cast.show(index, visible);
+    // O cliente de blocos do protótipo nunca aparece: só o modelo Máscara.
+    for (const part of blockParts) part.visible = false;
     // Quem está sentado à mesa levanta para vir ao balcão na sua vez.
     const atTable = [1, 2, 5];
     art.tablePeople.forEach((p, i) => (p.visible = !(visible && index === atTable[i])));
@@ -380,7 +381,11 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   }
   const events = buildEvents({ root, target, onHint: feedback, onCue: callbacks.onEventCue });
   let dressed = false;
-  Promise.all([loadUtensils(), art.ready, cast.loading]).then(([get]) => {
+  // O bar só aparece com todos os modelos certos carregados (nada do protótipo na tela).
+  root.visible = false;
+  let markReady: () => void = () => {};
+  const whenReady = new Promise<void>((resolve) => (markReady = resolve));
+  Promise.all([loadUtensils(), art.ready, cast.loading, art.seatedLoaded, art.pianistLoaded]).then(([get]) => {
     dressed = true;
     dressUtensils(get, {
       items,
@@ -393,6 +398,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       keep: new Set([shakerSurface, gauge]),
     });
     controls.dressHands(get('mao_cliente'));
+    render(session.state);
+    root.visible = true;
+    markReady();
   });
   const controls = bindControls({
     scene,
@@ -551,6 +559,8 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       const r = gl.domElement.getBoundingClientRect();
       return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
     },
+    /** Resolve quando todos os modelos estão carregados e a estação está vestida. */
+    whenReady,
     /** true quando os modelos do Blender já vestiram a estação. Usado pelos testes. */
     get ready() {
       return dressed;

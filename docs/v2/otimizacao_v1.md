@@ -11,8 +11,9 @@ Regra do Felipe: **atmosfera é o mais importante para a imersão; luz e áudio 
 | Câmera do Âmbar Noturno no computador | bloom, vinheta, grão e ACES iguais ao laboratório | idem |
 | **Pós-processamento próprio no VR** ([xr-post.ts](../../src/app/xr-post.ts)): a mesma receita do computador (luminância 0,75/0,2, mipmap blur de 8 níveis com raio 0,85, bloom 0,9 em screen, vinheta 0,75/0,25, grão 0,06, ACES), olho por olho | o EffectComposer não roda em WebXR; agora o VR tem a mesma luz do computador | [VR v3](estilos/otimizacao_v1/vr_luz_v3.png), [computador](estilos/otimizacao_v1/jogo_bartender_v2.png) |
 | Mãos do jogador de porcelana (estilo Máscara) | trocam as esferas de bloco | conferir o ângulo da pegada no Quest |
-| Sombras no Quest em 512 px | mesma luz e sombras, borda um pouco mais macia | quase igual |
-| Foveação leve no Quest (0,3) | o padrão do Three (1,0) borrava a periferia | centro intacto |
+| Sombras no Quest em 1024 px (iguais ao computador) | revertido o corte para 512 | igual |
+| Quest sem foveação e em 1,25x da resolução recomendada | nitidez em toda a visão; custa ~56% mais pixels | igual ao computador |
+| Grão no espaço de exibição e vinheta por olho | no VR o grão em luz linear deixava os pretos cinza | [VR v4](estilos/otimizacao_v1/vr_luz_v4.png) |
 | Saiu a luz de trabalho branca | era ela que deixava a cúpula branca e a cena "de escritório" | — |
 | Piano e murmúrio do salão | áudio posicional, sala, música que piora a cada ato | — |
 

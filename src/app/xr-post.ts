@@ -125,8 +125,11 @@ const compositeMaterial = () =>
       vec2 eyeUv = vec2((vUv.x - range.x) / (range.y - range.x), vUv.y);
       float d = distance(eyeUv, vec2(0.5));
       color *= smoothstep(0.8, offset * 0.799, d * (darkness + offset));
-      color = screen(color, vec3(rand(eyeUv * (1.0 + time))), noise);
-      gl_FragColor = vec4(toSRGB(aces(color)), 1.0);
+      // O grão entra na imagem final (espaço de exibição), como no computador: em luz linear
+      // ele "levantava" os pretos para cinza.
+      vec3 display = toSRGB(aces(color));
+      display = screen(display, vec3(rand(gl_FragCoord.xy * 0.001 * (1.0 + time))), noise);
+      gl_FragColor = vec4(display, 1.0);
     }`,
     {
       sceneBuffer: { value: null },
@@ -195,8 +198,10 @@ export function createXRPost(gl: THREE.WebGLRenderer) {
       // 2. filtros em tela cheia, sem a câmera do VR. Dois olhos lado a lado = estéreo;
       //    um só (ex.: espelho do simulador) = imagem inteira.
       const xr = gl.xr;
-      const views = (xr.getCamera() as THREE.ArrayCamera).cameras?.length ?? 1;
-      for (const m of [lum, down, up, composite]) m.uniforms.stereo.value = views > 1 ? 1 : 0;
+      // Estéreo = dois olhos com largura de verdade (o simulador em mono deixa o direito com 0).
+      const cams = (xr.getCamera() as THREE.ArrayCamera).cameras ?? [];
+      const stereo = cams.length > 1 && (cams[1] as THREE.PerspectiveCamera & { viewport?: THREE.Vector4 }).viewport!.z > 0;
+      for (const m of [lum, down, up, composite]) m.uniforms.stereo.value = stereo ? 1 : 0;
       xr.enabled = false;
       lum.uniforms.inputBuffer.value = sceneTarget!.texture;
       pass(lum, lumTarget);

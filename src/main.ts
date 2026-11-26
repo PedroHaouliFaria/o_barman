@@ -257,6 +257,18 @@ xrStore.subscribe((state, previous) => {
   boundXRSession = state.session ?? null;
   // Em VR a interface do navegador sai da frente (no simulador ela cobriria a vista do headset).
   document.body.classList.toggle('in-xr', Boolean(state.session));
+  // Simulador do Quest: ele desenha na resolução CSS da janela (metade numa tela Retina);
+  // aqui volta para a resolução real da tela, para comparar com o computador de igual para igual.
+  if (state.session && (window as any).__questEmulator) {
+    requestAnimationFrame(() => {
+      const canvas = document.querySelector<HTMLCanvasElement>('#canvas-root canvas, canvas');
+      if (!canvas) return;
+      canvas.width = Math.round(innerWidth * devicePixelRatio);
+      canvas.height = Math.round(innerHeight * devicePixelRatio);
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+    });
+  }
   boundXRSession?.addEventListener('visibilitychange', onVisibility);
   if (!state.session) pauseForInterruption();
 });
@@ -281,8 +293,14 @@ function boot(mounted: Station) {
   // Gancho para os testes automáticos de navegador (scripts/browser-check.js).
   (window as any).__barman = { game, station, act, xr: xrStore };
   render();
-  for (const id of ['start', 'turn-control', 'enter-vr']) byId<HTMLButtonElement>(id).disabled = false;
-  announce('Balcão pronto. Inicie o turno para receber a primeira comanda.');
+  byId('start').textContent = 'Preparando o bar…';
+  document.body.classList.add('loading');
+  mounted.whenReady.then(() => {
+    for (const id of ['start', 'turn-control', 'enter-vr']) byId<HTMLButtonElement>(id).disabled = false;
+    byId('start').textContent = 'Abrir o bar';
+    document.body.classList.remove('loading');
+    announce('Balcão pronto. Abra o bar para receber a primeira comanda.');
+  });
 }
 
 // Em desenvolvimento, ?xr-emulate simula um Meta Quest 3 no navegador (sem headset).

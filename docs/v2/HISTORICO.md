@@ -96,3 +96,11 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 **Felipe (26/11/2026):** "tá ótimo, depois qualquer coisa eu mudo. agora tendo isso quero que você organize TUDO que você fez muito bem organizado os assets e tudo mais e crie um outro agente agora pra cuidar de tudo da mecânica do jogo. fazer o jogo realmente ser jogável e testar as mecânicas atuais. já commite tudo e contextualize esse começo pra ele. faça esse agente sob a sua sessão"
 → Organização: modelos em `public/models/{cenario,props,pessoas,experimentos}`; `art/gerar_modelos.sh` gera tudo no Windows e copia para as pastas; catálogo [ASSETS.md](ASSETS.md); mapa [README.md](README.md); `CLAUDE.md` na raiz com stack, mapa e regras do Felipe para qualquer agente.
 → Nova sessão dedicada à mecânica do jogo (jogabilidade e testes), ligada a esta.
+
+## 26/11/2026 · frente da mecânica (branch `claude/mecanica-60d8eb`)
+
+**Felipe:** "entenda que precisamos ver o que foi recentemente commitado na main, pegue a versao mais recentea da main. e antes de comecar a codificar vamos conversando aqui. primeiro que o nome nao vai ser spirits e spirits. e primiero entenda qrelamnet quais sao as mecanicas exsitentes la."
+→ Levantamento: a main recebeu o PR #1 da equipe (gaveta de utensílios com alicate, pinça e faca; copo pego na estante a cada cliente; avisos "Macerado/Mexido/Batido"; pousar objetos livremente), feito no protótipo A-Frame. Ainda não portado para a v2.
+
+**Felipe:** "logico que a nossa versao ne, a mais avancada v2. o nome do jogo quero que voce sugira. algo relacionado a barman, e que HINTE a algo creepie e eerie. mas algo nessa vibe. E sobre a equipe, sim eels sabem"
+→ Base do jogo: v2 (R3F). As funções do PR #1 serão refeitas na v2. Nome novo: sugestões em discussão (o nome "Spirits & Spirits" será substituído).

@@ -115,3 +115,11 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe (26/11/2026):** "aqui o relatorio de maecanicas que meu amigo preparou" (anexo `Relatorio de mecanicas.docx`)
 → Guardado em [equipe/relatorio_mecanicas_v0.1.0.docx](equipe/relatorio_mecanicas_v0.1.0.docx) (texto em `.txt` ao lado). Descreve o protótipo A-Frame no commit 827d239 e traz 36 fichas de validação humana. Serve de referência das mecânicas a manter na v2.
+
+**Felipe (26/11/2026):** "precisamos fazer o deles, com basen o mesmo estilo." (modelos para coqueteleira, tampa, colher, macerador, potes, cuba, pia, bandeja, gaveta, utensílios, bichos e mão do cliente)
+**Felipe:** "sim concordo, precisamos melhorar isso. entenda SUA FUNCCAO vai ser exatamente isso, aproveitar o estilo que ja ta linod e fazer ele ser relamnete jogavel, deixar mais perto as coisas, poder pegar as coisas e tudo mais. entendeu? voce precisa mudar e deixar TUDO jogavel de verdade pesqiuse e estudo boas praticas pra fazer isso. e tenha essa liberdade total pra fazer isso. lemrbadno apenas de mantaer todo estilo feito e crie novos estilos pra coisas assim que precisamso"
+→ A sessão da mecânica integra o bar Âmbar Noturno e as pessoas Máscara no jogo, aproxima a estante (garrafas ao alcance em VR), cria por código no Blender os objetos de jogo que faltam no mesmo estilo e faz a passada de jogabilidade (boas práticas de interação em VR).
+
+**Felipe (26/11/2026, vendo a primeira integração):** "ja vou dar um toque, ta MUITO RIUM isso aqui. voce ta reaproveitanod a UI deles. HORRIVEL NAO ERA PRA FAZER ISSO. nos estamos redeesnehadno TUDO de UI do ZERO. faca isso, nao quero repaorveitar nada UI do antigo."
+→ A UI inteira (placas no mundo, barra, caderno, diálogos, etiquetas) será redesenhada do zero no estilo Âmbar Noturno; nada da UI do protótipo é reaproveitado.
+→ Resultado (mecânica v1): bar Âmbar Noturno como cena do jogo, estante 60 cm mais perto, 26 objetos novos no Blender (`utensilios.glb`), UI nova do zero (comanda de papel, legendas, latão gravado, tela de abertura, caderno de couro), pouso assistido e correções de física. Os 9 pedidos passam pelo desktop (objetos 3D e Caderno) e pelo Quest simulado só com gestos. Relatório: [mecanica_v1.md](mecanica_v1.md); capturas em `estilos/jogo_v1/`.

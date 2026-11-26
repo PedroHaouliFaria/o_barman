@@ -7,6 +7,9 @@ Todos os assets do jogo são gerados por scripts Python no Blender: modelos, tex
 | `blender/build_balcao.py` | `luminaria.glb`, `balcao.glb`, `copos.glb`, `garrafas.glb` (as 15 bebidas engarrafadas do jogo) |
 | `blender/build_salao.py` | `sala` (piso de mármore, lambri, papel de parede, sancas, vigas), `estante`, `banqueta`, `mesa` (com abajur), `cadeira` (madeira curvada), `cabine` (veludo capitonê + arandela), `piano` (cauda + banco), `porta` (moldura + folha), `janela` (com cortinas), `relogio` |
 | `blender/build_pessoas.py` | rascunho de pessoas: o Executivo em 3 estilos (`pessoa_realista`, `pessoa_cera`, `pessoa_marionete`). Corpo e roupa por skin modifier, rosto esculpido por funções, olhos, cabelo, gravata |
+| `blender/build_pessoas_v2.py` | estilos Sombra, Máscara e Déco (o Executivo) |
+| `blender/build_mascaras.py` | estilo Máscara escolhido: pessoas normais com olhos pintados (`mascara_executivo`, `mascara_turista` sentada, `mascara_aposentado` sentado); expressão, cabelo, roupa e pose por parâmetros |
+| `blender/figura.py` | utilitários de figura (skin modifier, prismas, torno) |
 | `blender/lib.py` | torno (perfis girados), caixas chanfradas, tubos, UV em escala de metro, bake na GPU, exportação glTF |
 | `blender/materials.py` | nogueira envernizada em tábuas, couro, tapete de borracha (nós procedurais assados em textura) |
 | `blender/labels.py` | rótulos renderizados com texto e filetes (fontes Georgia/Bodoni do Windows) |

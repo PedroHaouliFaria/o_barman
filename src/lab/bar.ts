@@ -20,6 +20,8 @@ export interface BarScene {
   applyAssets(assets: BarAssets): void;
   /** cliente provisório em frente ao bartender (escondido quando testamos pessoas) */
   frontCustomer: THREE.Object3D;
+  /** manequins sentados nas mesas, na ordem das mesas */
+  tableFigures: THREE.Object3D[];
 }
 
 export function buildBar(style: StyleDef): BarScene {
@@ -159,6 +161,7 @@ export function buildBar(style: StyleDef): BarScene {
 
   // ---------------- salão: mesas, cadeiras, cabines ----------------
   const murmurAnchors: THREE.Object3D[] = [];
+  const tableFigures: THREE.Object3D[] = [];
   function chair(p: THREE.Object3D, at: V3, rotY: number) {
     const c = group(p, at, rotY);
     box(c, [0.42, 0.05, 0.42], [0, 0.46, 0], 'wood');
@@ -190,6 +193,7 @@ export function buildBar(style: StyleDef): BarScene {
       const f = figure(style, { seated: true, outfit: p.outfit, hat: p.hat });
       add(t, f.root, [Math.sin(a) * 0.68, 0, Math.cos(a) * 0.68], a);
       f.root.userData.look = p.look;
+      tableFigures.push(f.root);
       animators.push((time, dt) => f.talk(time, dt));
       const drink = group(t, [Math.sin(a) * 0.25, 0.772, Math.cos(a) * 0.25]);
       mesh(drink, cyl(0.035, 0.03, 0.12, 12), 'bottle', [0, 0.06, 0], 0, '#b9c8bf');
@@ -426,6 +430,7 @@ export function buildBar(style: StyleDef): BarScene {
   return {
     root,
     frontCustomer,
+    tableFigures,
     applyAssets,
     door,
     pianoAnchor,

@@ -6,7 +6,7 @@ import { ToneMappingMode } from 'postprocessing';
 import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as THREE from 'three';
-import { loadBarAssets, loadPeople } from './assets';
+import { loadBarAssets, loadModels, loadPeople } from './assets';
 import { createLabAudio } from './audio';
 import { buildBar, type BarScene } from './bar';
 import { STYLES, type StyleId } from './styles';
@@ -22,6 +22,10 @@ const VIEWS = {
   rosto_1: { name: 'Pessoa 1 de perto', pos: [-0.72, 1.85, -0.85], look: [-0.72, 1.8, -1.6] },
   rosto_2: { name: 'Pessoa 2 de perto', pos: [0, 1.5, -0.85], look: [0, 1.48, -1.6] },
   rosto_3: { name: 'Pessoa 3 de perto', pos: [0.72, 1.68, -0.85], look: [0.72, 1.66, -1.6] },
+  mesa: { name: 'Mesa da Turista', pos: [-0.55, 1.5, -2.55], look: [-1.75, 1.05, -4.15] },
+  turista: { name: 'Turista de frente', pos: [-1.95, 1.35, -4.75], look: [-1.42, 1.2, -3.45] },
+  aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
+  executivo: { name: 'Executivo de perto', pos: [0, 1.55, -0.75], look: [0, 1.45, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
 } as const;
@@ -116,9 +120,30 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         if (!alive) return;
         bar.applyAssets(assets);
         // ?pessoas: os três estilos do Executivo lado a lado no balcão
-        if (new URLSearchParams(location.search).has('pessoas')) {
+        const which = new URLSearchParams(location.search).get('pessoas');
+        if (which === 'normais') {
+          // estilo Máscara: normais pintados (balcão e mesa) + um estranho de olhos-buraco para contraste
           bar.frontCustomer.visible = false;
-          loadPeople((new URLSearchParams(location.search).get('pessoas') || 'sombra,mascara,deco').split(',')).then((people) => {
+          loadModels(['mascara_executivo', 'mascara_turista', 'mascara_aposentado', 'pessoa_mascara']).then(
+            ([exec, turista, aposentado, estranho]) => {
+              if (!alive) return;
+              exec.position.set(0, 0, -1.6);
+              exec.rotation.y = Math.PI;
+              estranho.position.set(1.0, 0, -1.65);
+              estranho.rotation.y = Math.PI - 0.3;
+              bar.root.add(exec, estranho);
+              bar.tableFigures.slice(0, 2).forEach((f, i) => {
+                const person = [turista, aposentado][i];
+                person.position.copy(f.position);
+                person.rotation.copy(f.rotation);
+                f.visible = false;
+                f.parent!.add(person);
+              });
+            },
+          );
+        } else if (which !== null) {
+          bar.frontCustomer.visible = false;
+          loadPeople((which || 'sombra,mascara,deco').split(',')).then((people) => {
             if (!alive) return;
             people.forEach((p, i) => {
               p.position.set((i - 1) * 0.72, 0, -1.6);
@@ -127,19 +152,6 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
             });
           });
         }
-        requestAnimationFrame(() => {
-          if (!alive) return;
-          const target = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
-          const cube = new THREE.CubeCamera(0.05, 20, target);
-          cube.position.set(0, 1.35, -0.8);
-          scene.add(cube);
-          cube.update(gl, scene);
-          scene.remove(cube);
-          const pmrem = new THREE.PMREMGenerator(gl);
-          scene.environment = pmrem.fromCubemap(target.texture).texture;
-          scene.environmentIntensity = 0.6;
-          pmrem.dispose();
-        });
       })
       .catch((e) => console.error('Falha ao carregar modelos', e));
     return () => {

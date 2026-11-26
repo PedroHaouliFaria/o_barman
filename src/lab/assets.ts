@@ -148,3 +148,8 @@ export async function loadBarAssets(): Promise<BarAssets> {
 export async function loadPeople(keys: string[]) {
   return Promise.all(keys.map((k) => load(`pessoa_${k}.glb`)));
 }
+
+/** Carrega modelos de public/models pelo nome do arquivo (sem .glb). */
+export async function loadModels(names: string[]) {
+  return Promise.all(names.map((n) => load(`${n}.glb`)));
+}

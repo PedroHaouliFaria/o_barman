@@ -63,7 +63,6 @@ function fixMaterials(root: THREE.Object3D) {
           clearcoatRoughness: 0.02,
           envMapIntensity: 3.5,
           specularIntensity: 1,
-          side: THREE.DoubleSide,
           depthWrite: false,
         });
       if (name.startsWith('vidro'))

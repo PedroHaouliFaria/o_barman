@@ -103,7 +103,7 @@ export function buildBar(style: StyleDef): BarScene {
     [-0.18, -0.74, 0.16, 'highball'], [0.12, -0.7, 0.11, 'rocks'], [0.4, -0.86, 0.13, 'coupe'],
     [-0.45, -0.9, 0.3, 'garrafa:rum'], [-0.62, -0.78, 0.2, 'garrafa:cola'], [0.66, -0.72, 0.2, 'garrafa:lemon_juice'],
   ] as [number, number, number, string][]) {
-    const g = group(root, [x, 1.09, z]);
+    const g = group(root, [x, 1.092, z]);
     mesh(g, cyl(0.04, 0.035, h, 14), 'bottle', [0, h / 2, 0], 0, '#9fb8b0');
     slots.glasses.push({ group: g, kind });
   }
@@ -121,7 +121,7 @@ export function buildBar(style: StyleDef): BarScene {
     for (let i = 0; i < 18; i++) {
       const x = -2.15 + i * 0.25 + (row % 2) * 0.1;
       const tall = 0.24 + ((i * 7 + row * 3) % 5) * 0.025;
-      const g = group(back, [x, y, 0.18]);
+      const g = group(back, [x, y + 0.002, 0.18]);
       slots.shelf.push(g);
       const glass = mesh(g, cyl(0.045, 0.048, tall, 12), 'bottle', [0, tall / 2, 0], 0, liquids[(i + row * 3) % liquids.length]);
       glass.castShadow = false;
@@ -152,7 +152,7 @@ export function buildBar(style: StyleDef): BarScene {
     slots.pendants.push({ group: g, placeholder: ph, light });
   }
   pendant([-1.8, 2.45, -0.95], true);
-  pendant([0, 2.05, -0.95], true); // a central desce para aparecer olhando reto
+  pendant([0, 2.22, -0.95], true); // a central fica mais baixa que as outras, visível olhando reto
   pendant([1.8, 2.45, -0.95], false);
 
   // ---------------- salão: mesas, cadeiras, cabines ----------------
@@ -189,7 +189,7 @@ export function buildBar(style: StyleDef): BarScene {
       add(t, f.root, [Math.sin(a) * 0.68, 0, Math.cos(a) * 0.68], a);
       f.root.userData.look = p.look;
       animators.push((time, dt) => f.talk(time, dt));
-      const drink = group(t, [Math.sin(a) * 0.25, 0.77, Math.cos(a) * 0.25]);
+      const drink = group(t, [Math.sin(a) * 0.25, 0.772, Math.cos(a) * 0.25]);
       mesh(drink, cyl(0.035, 0.03, 0.12, 12), 'bottle', [0, 0.06, 0], 0, '#b9c8bf');
       slots.glasses.push({ group: drink, kind: p.seat % 2 ? 'rocks' : 'highball' });
     }
@@ -197,9 +197,9 @@ export function buildBar(style: StyleDef): BarScene {
     return t;
   }
   table([-1.7, 0, -4.1], [0.4, 2.6], [{ seat: 0, look: 0, outfit: 1, hat: true }, { seat: 1, look: 0, outfit: 3 }]);
-  table([1.3, 0, -4.6], [-0.6, 1.6, 3.6], [{ seat: 0, look: 0, outfit: 0 }, { seat: 1, look: 0, outfit: 5 }, { seat: 2, look: 0, outfit: 2 }]);
+  table([0.45, 0, -4.35], [-0.6, 1.6, 3.6], [{ seat: 0, look: 0, outfit: 0 }, { seat: 1, look: 0, outfit: 5 }, { seat: 2, look: 0, outfit: 2 }]);
   table([-0.2, 0, -6.6], [0.8, 3.9], [{ seat: 0, look: 0, outfit: 6 }]);
-  table([2.5, 0, -6.4], [2.2, 5.2], []);
+  table([1.15, 0, -7.0], [2.2, 5.2], []);
 
   // cabines de veludo na parede esquerda
   for (const z of [-3.4, -5.6, -7.8]) {
@@ -256,7 +256,8 @@ export function buildBar(style: StyleDef): BarScene {
   }
 
   // ---------------- piano e pianista (fundo, à direita) ----------------
-  const piano = group(root, [3.4, 0, -8.1], -0.35);
+  const STAGE = 0.26; // palco do piano (modelado em sala.glb)
+  const piano = group(root, [3.6, STAGE, -7.9], -0.35);
   const piano0 = piano.children.length;
   {
     // corpo de cauda: perfil curvo extrudado

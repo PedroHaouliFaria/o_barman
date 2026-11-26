@@ -18,6 +18,7 @@ const VIEWS = {
   fundo: { name: 'Porta e piano', pos: [0.4, 1.62, -2.9], look: [0.3, 1.2, -9.8] },
   balcao: { name: 'Visto do cliente', pos: [0.4, 1.58, -3.3], look: [0, 1.3, 0.6] },
   estante: { name: 'Estante (atrás)', pos: [0, 1.62, 0], look: [0, 1.45, 1.3] },
+  pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
 } as const;
 type ViewId = keyof typeof VIEWS;
@@ -219,7 +220,7 @@ function Lab() {
           shadows={style.shadows ? 'soft' : false}
           dpr={style.resolution < 1 ? 1 : [1, 2]}
           gl={{ antialias: style.resolution >= 1, preserveDrawingBuffer: true }}
-          camera={{ fov: 72, near: 0.02, far: 40 }}
+          camera={{ fov: 72, near: 0.05, far: 30 }}
         >
           <color attach="background" args={[style.background]} />
           <fogExp2 attach="fog" args={[style.fog.color, style.fog.density]} />

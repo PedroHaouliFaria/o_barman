@@ -60,3 +60,10 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 → Tremor da estante: era z-fighting (prateleira de baixo e tampo do armário na mesma altura). A estante virou um modelo único sem superfícies sobrepostas; a primeira fileira de garrafas pousa direto no tampo.
 → Luminária central desceu de 2,45 m para 2,05 m (cabo de 2 m atravessa o teto em qualquer altura).
 → Novo `art/blender/build_salao.py`: sala, estante, banquetas, mesas com abajur, cadeiras de madeira curvada, cabines de veludo capitonê com arandela, piano de cauda com banco, porta, janelas com cortinas e relógio com mostrador romano. Capturas em `estilos/assets_salao_*_v1.jpg`. Pessoas continuam provisórias (próximo passo).
+
+**Felipe (26/11/2026):** "suba um pouco a luz, tá muito na cara. tá travando a parte de baixo da taça da mesa quando muda a câmera, igual na prateleira que tava. não deixe isso acontecer com nada. além disso quero que a visão pro pianista seja melhor e dê pra ver ele sem pessoas na frente. mas sim, agora vamos para as pessoas, tá muito bom"
+→ Luminária central em 2,22 m (antes 2,05).
+→ Tremor (z-fighting) evitado em tudo: objetos pousados ficam 2 mm acima da superfície; vidro desenhado só por fora (era dupla face, a base brigava com o tampo); câmera com near 0,05 m (mais precisão de profundidade).
+→ Piano num palco de 26 cm no canto do fundo e mesas fora da linha de visão: o pianista aparece inteiro do posto do bartender (`estilos/assets_salao_pianista_v2.jpg`).
+**Felipe:** "mas acalma, entenda que as pessoas vai ser sensível, preciso eu ver e ver se eu aprovo [...] quero ver diversos estilos [...] uma pessoa normal, uma pessoa estranha e algumas das pessoas reais do nosso manual. quero detalhes. [...] primeiro gere apenas 1 pessoa com detalhes pra cada estilo e depois vamos gerando mais."
+→ Próximo: 1 pessoa (o Executivo) em 3 estilos, para aprovação antes de qualquer outra.

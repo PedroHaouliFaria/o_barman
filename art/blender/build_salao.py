@@ -143,6 +143,17 @@ def build_room():
 
     for k in ('fundo', 'esquerda', 'direita', 'frente'):
         parts += wall(k)
+    # palco baixo do piano no canto do fundo (o pianista fica acima das cabeças do salão)
+    st_x0, st_z0, st_h = 2.4, -6.75, 0.26
+    parts.append(gbox('palco', X1 - st_x0, st_h, st_z0 - ZF, (st_x0 + X1) / 2, st_h / 2 - 0.004, (st_z0 + ZF) / 2,
+                      tex='nogueira', bevel=0.01))
+    parts.append(gbox('palco_espelho', X1 - st_x0 + 0.02, 0.2, 0.02, (st_x0 + X1) / 2, 0.11, st_z0 + 0.012,
+                      tex='nogueira_escura'))
+    parts.append(gbox('palco_espelho_lado', 0.02, 0.2, st_z0 - ZF, st_x0 - 0.012, 0.11, (st_z0 + ZF) / 2,
+                      tex='nogueira_escura'))
+    parts.append(gbox('palco_quina', X1 - st_x0 + 0.04, 0.025, 0.03, (st_x0 + X1) / 2, st_h - 0.012, st_z0 + 0.02,
+                      material=brass))
+    parts.append(gbox('palco_degrau', 0.9, 0.13, 0.32, 3.4, 0.065, st_z0 + 0.17, tex='nogueira', bevel=0.008))
     export(parts, 'sala')
 
 

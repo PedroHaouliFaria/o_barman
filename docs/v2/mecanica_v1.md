@@ -1,6 +1,6 @@
 # Mecânica v1 · On the House jogável no bar novo (26/11/2026)
 
-Frente da mecânica, branch `claude/mecanica-60d8eb`. Pedido do Felipe: levar as mecânicas existentes para o jogo novo (bar Âmbar Noturno, pessoas Máscara), deixar tudo jogável de verdade, aproximar as coisas, refazer a UI do zero. Referência das mecânicas: [relatório da equipe](equipe/relatorio_mecanicas_v0.1.0.txt) (protótipo A-Frame, commit 827d239).
+Frente da mecânica, branch `feat/adicionar-mecanicas` (sobre `feat/redesign`). Pedido do Felipe: levar as mecânicas existentes para o jogo novo (bar Âmbar Noturno, pessoas Máscara), deixar tudo jogável de verdade, aproximar as coisas, refazer a UI do zero. Referência das mecânicas: [relatório da equipe](equipe/relatorio_mecanicas_v0.1.0.txt) (protótipo A-Frame, commit 827d239).
 
 ## O que mudou
 

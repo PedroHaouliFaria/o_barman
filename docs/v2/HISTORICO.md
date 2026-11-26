@@ -97,7 +97,7 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 → Organização: modelos em `public/models/{cenario,props,pessoas,experimentos}`; `art/gerar_modelos.sh` gera tudo no Windows e copia para as pastas; catálogo [ASSETS.md](ASSETS.md); mapa [README.md](README.md); `CLAUDE.md` na raiz com stack, mapa e regras do Felipe para qualquer agente.
 → Nova sessão dedicada à mecânica do jogo (jogabilidade e testes), ligada a esta.
 
-## 26/11/2026 · frente da mecânica (branch `claude/mecanica-60d8eb`)
+## 26/11/2026 · frente da mecânica (branch `feat/adicionar-mecanicas`)
 
 **Felipe:** "entenda que precisamos ver o que foi recentemente commitado na main, pegue a versao mais recentea da main. e antes de comecar a codificar vamos conversando aqui. primeiro que o nome nao vai ser spirits e spirits. e primiero entenda qrelamnet quais sao as mecanicas exsitentes la."
 → Levantamento: a main recebeu o PR #1 da equipe (gaveta de utensílios com alicate, pinça e faca; copo pego na estante a cada cliente; avisos "Macerado/Mexido/Batido"; pousar objetos livremente), feito no protótipo A-Frame. Ainda não portado para a v2.
@@ -123,3 +123,6 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 **Felipe (26/11/2026, vendo a primeira integração):** "ja vou dar um toque, ta MUITO RIUM isso aqui. voce ta reaproveitanod a UI deles. HORRIVEL NAO ERA PRA FAZER ISSO. nos estamos redeesnehadno TUDO de UI do ZERO. faca isso, nao quero repaorveitar nada UI do antigo."
 → A UI inteira (placas no mundo, barra, caderno, diálogos, etiquetas) será redesenhada do zero no estilo Âmbar Noturno; nada da UI do protótipo é reaproveitado.
 → Resultado (mecânica v1): bar Âmbar Noturno como cena do jogo, estante 60 cm mais perto, 26 objetos novos no Blender (`utensilios.glb`), UI nova do zero (comanda de papel, legendas, latão gravado, tela de abertura, caderno de couro), pouso assistido e correções de física. Os 9 pedidos passam pelo desktop (objetos 3D e Caderno) e pelo Quest simulado só com gestos. Relatório: [mecanica_v1.md](mecanica_v1.md); capturas em `estilos/jogo_v1/`.
+
+**Felipe (26/11/2026):** "nao quero que nenhuma branch, nem commite, nem PR NEM NADA, tenha o nome claude. nem como co author nem nada. tudo no meu nome e no conventional commits. feat/redesign e feeat/ adicinoar mecanicas. faca isso e commite e abra o PR"
+→ Histórico reescrito sem coautoria nem menções ao assistente, mensagens em conventional commits, autor Felipe. Branches: `feat/redesign` (migração para a v2, laboratório de arte e pessoas Máscara) e `feat/adicionar-mecanicas` (mecânicas no bar novo, UI nova, objetos de jogo), uma sobre a outra.

@@ -30,6 +30,37 @@ function Rig({ view }: { view: ViewId }) {
     return () => void camera.remove(listener);
   }, [camera]);
   const applied = useRef<ViewId | null>(null);
+  // Andar livre: WASD ou setas, Shift corre. Fica na altura dos olhos e dentro do salão.
+  const keys = useRef(new Set<string>());
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => keys.current.add(e.code);
+    const up = (e: KeyboardEvent) => keys.current.delete(e.code);
+    const clear = () => keys.current.clear();
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
+  const forward = useRef(new THREE.Vector3());
+  const side = useRef(new THREE.Vector3());
+  useFrame((_, dt) => {
+    const k = keys.current;
+    const ahead = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
+    const strafe = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
+    if (!ahead && !strafe) return;
+    const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? 3.2 : 1.4) * Math.min(dt, 0.1);
+    const yaw = euler.current.y;
+    forward.current.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+    side.current.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    camera.position.addScaledVector(forward.current, ahead * speed).addScaledVector(side.current, strafe * speed);
+    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -5.2, 5.2);
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -9.7, 1.4);
+    camera.position.y += (1.62 - camera.position.y) * Math.min(1, dt * 4);
+  });
   useFrame(() => {
     if (applied.current === view) return;
     applied.current = view;
@@ -184,7 +215,7 @@ function Lab() {
             ))}
           </ul>
           <p className="refs">Referências: {style.references}</p>
-          <p className="keys">Arraste para olhar · 1 2 3 estilos · V vistas · H esconde este painel</p>
+          <p className="keys">Arraste para olhar · WASD anda (Shift corre) · 1 2 3 estilos · V vistas · H esconde o painel</p>
         </aside>
       )}
     </>

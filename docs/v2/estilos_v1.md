@@ -58,7 +58,11 @@ Um livro de contos macabros que ganhou volume. Tem sombra em faixas, contorno pr
 
 ![Comparação](estilos/comparacao_v1.jpg)
 
-## Recomendação
+## Decisão (26/11/2026)
+
+**Escolhido: Âmbar Noturno**, mantido igual do começo ao fim do jogo. Felipe: *"não descaradamente terror e sim super climatizado e ambientalizado"*. Os assets atuais (pessoas, garrafas, objetos) ainda não foram aprovados.
+
+## Recomendação original (antes da decisão)
 
 **Âmbar Noturno como base, "virando fita" ao longo da noite.**
 

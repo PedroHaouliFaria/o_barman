@@ -274,6 +274,8 @@ xrStore.subscribe((state, previous) => {
 });
 byId('enter-vr').onclick = async () => {
   audio.unlock();
+  // O clique em "Entrar em VR" é o gesto que libera o som: o pianista já toca quando o bar aparece.
+  station?.startMusic();
   try {
     if (!window.isSecureContext || !(await navigator.xr?.isSessionSupported('immersive-vr'))) {
       openInfo(

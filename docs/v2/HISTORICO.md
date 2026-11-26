@@ -142,3 +142,6 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe (26/11/2026, com capturas):** "aqui um bug que eu percebi olha os personagems [...] antes de carregar tudo, voce mostra uma versao antiga nessa tela. EU NAO QUERO ISSO. carregue de verdade e so mostre a tela quando tudo relamente carregar [...] olhe a comparacao do PC e do VR O do PC ta infinitamnete mais bonito. sem esses pixelados exagerados e com um ponto preto muito melhor [...] EU QUERO que fique igual no PC esta muito lindo"
 → Cliente de blocos removido (aparecia junto do Máscara). O bar só aparece com todos os modelos carregados (botão "Preparando o bar…"). VR: grão aplicado no espaço de exibição (pretos voltam a ser pretos), vinheta certa em mono e estéreo, simulador na resolução real da tela, Quest em 1,25x da resolução recomendada, sem foveação e com sombras de 1024 px. Captura: `estilos/otimizacao_v1/vr_luz_v4.png`.
+
+**Felipe (26/11/2026):** "ta muito bom assim! o piano ta no vr, ta tudo normal? s sim pode commitar e subir pra main, mas commitando na nossa branch ne"
+→ Piano começa ao entrar no VR (o clique libera o som). Ensaios: 37 testes de regras, 9 pedidos pelo computador (objetos 3D e Caderno) e 9 pedidos no Quest simulado só com gestos, todos aprovados. Commit na `feat/adicionar-mecanicas` e merge do PR na `main`.

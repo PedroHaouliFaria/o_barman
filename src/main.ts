@@ -255,6 +255,8 @@ xrStore.subscribe((state, previous) => {
   if (state.session === previous.session) return;
   boundXRSession?.removeEventListener('visibilitychange', onVisibility);
   boundXRSession = state.session ?? null;
+  // Em VR a interface do navegador sai da frente (no simulador ela cobriria a vista do headset).
+  document.body.classList.toggle('in-xr', Boolean(state.session));
   boundXRSession?.addEventListener('visibilitychange', onVisibility);
   if (!state.session) pauseForInterruption();
 });

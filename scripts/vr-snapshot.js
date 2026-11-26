@@ -5,7 +5,7 @@ const D = process.argv[2], tag = process.argv[3];
 const b = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] });
 const p = await b.newPage({ viewport: { width: 1280, height: 720 } });
 p.on('pageerror', (e) => console.log('ERR', e.message));
-await p.goto('http://localhost:5180/?xr-emulate');
+await p.goto('http://localhost:5180/?xr-emulate&semui');
 await p.waitForFunction(() => !document.querySelector('#start').disabled, {}, { timeout: 90000 });
 await p.click('#start');
 await p.click('#enter-vr');

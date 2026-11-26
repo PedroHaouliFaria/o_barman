@@ -9,8 +9,11 @@ export default defineConfig(({ mode }) => ({
   // Pré-otimiza o que só aparece depois do primeiro carregamento (modelos, simulador de Quest):
   // sem isso o Vite recarrega a página no meio da primeira partida.
   optimizeDeps: {
-    include: ['three/examples/jsm/loaders/GLTFLoader.js', 'iwer', '@dimforge/rapier3d-compat'],
+    include: ['three/examples/jsm/loaders/GLTFLoader.js', 'iwer', '@iwer/devui', '@dimforge/rapier3d-compat'],
   },
+  // Uma única cópia do Three.js: o painel do simulador (@iwer/devui) traz a 0.165 aninhada,
+  // que misturada com a do jogo quebra a renderização dele.
+  resolve: { dedupe: ['three'] },
   build: {
     target: 'es2022',
     rollupOptions: { input: { main: 'index.html', estilos: 'estilos.html' } },

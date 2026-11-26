@@ -126,3 +126,8 @@ export async function loadBarAssets(): Promise<BarAssets> {
   const models = Object.fromEntries(FURNITURE.map((n, i) => [n, furniture[i]]));
   return { luminaria, balcao, copos: byPrefix(copos, 'copo_'), garrafas: byPrefix(garrafas, 'garrafa_'), models };
 }
+
+/** Pessoas em teste de estilo (art/blender/build_pessoas.py). */
+export async function loadPeople(keys: string[]) {
+  return Promise.all(keys.map((k) => load(`pessoa_${k}.glb`)));
+}

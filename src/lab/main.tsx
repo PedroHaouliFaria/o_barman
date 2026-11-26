@@ -6,7 +6,7 @@ import { ToneMappingMode } from 'postprocessing';
 import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as THREE from 'three';
-import { loadBarAssets } from './assets';
+import { loadBarAssets, loadPeople } from './assets';
 import { createLabAudio } from './audio';
 import { buildBar, type BarScene } from './bar';
 import { STYLES, type StyleId } from './styles';
@@ -18,6 +18,10 @@ const VIEWS = {
   fundo: { name: 'Porta e piano', pos: [0.4, 1.62, -2.9], look: [0.3, 1.2, -9.8] },
   balcao: { name: 'Visto do cliente', pos: [0.4, 1.58, -3.3], look: [0, 1.3, 0.6] },
   estante: { name: 'Estante (atrás)', pos: [0, 1.62, 0], look: [0, 1.45, 1.3] },
+  pessoas: { name: 'Pessoas', pos: [0, 1.62, -0.3], look: [0, 1.5, -1.6] },
+  rosto_realista: { name: 'Rosto realista', pos: [-0.72, 1.68, -1.12], look: [-0.72, 1.66, -1.6] },
+  rosto_cera: { name: 'Rosto cera', pos: [0, 1.8, -1.12], look: [0, 1.78, -1.6] },
+  rosto_marionete: { name: 'Rosto marionete', pos: [0.72, 1.7, -1.12], look: [0.72, 1.68, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
 } as const;
@@ -111,6 +115,18 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
       .then((assets) => {
         if (!alive) return;
         bar.applyAssets(assets);
+        // ?pessoas: os três estilos do Executivo lado a lado no balcão
+        if (new URLSearchParams(location.search).has('pessoas')) {
+          bar.frontCustomer.visible = false;
+          loadPeople(['realista', 'cera', 'marionete']).then((people) => {
+            if (!alive) return;
+            people.forEach((p, i) => {
+              p.position.set((i - 1) * 0.72, 0, -1.6);
+              p.rotation.y = Math.PI;
+              bar.root.add(p);
+            });
+          });
+        }
         requestAnimationFrame(() => {
           if (!alive) return;
           const target = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });

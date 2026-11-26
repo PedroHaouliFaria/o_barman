@@ -18,6 +18,8 @@ export interface BarScene {
   strike(hand: 0 | 1): void;
   /** troca as primitivas pelos modelos do Blender */
   applyAssets(assets: BarAssets): void;
+  /** cliente provisório em frente ao bartender (escondido quando testamos pessoas) */
+  frontCustomer: THREE.Object3D;
 }
 
 export function buildBar(style: StyleDef): BarScene {
@@ -231,9 +233,11 @@ export function buildBar(style: StyleDef): BarScene {
     murmurAnchors.push(b);
   }
   // cliente no balcão em frente ao jogador + dois no balcão
+  let frontCustomer: THREE.Object3D = root;
   {
     const front = figure(style, { seated: false, outfit: 0 });
     add(root, front.root, [0, 0, -1.55], Math.PI);
+    frontCustomer = front.root;
     animators.push((t, dt) => front.idle(t, dt));
     const left = figure(style, { seated: true, outfit: 6, hunch: true });
     add(root, left.root, [-2.7, 0.33, -1.78], Math.PI + 0.2);
@@ -421,6 +425,7 @@ export function buildBar(style: StyleDef): BarScene {
 
   return {
     root,
+    frontCustomer,
     applyAssets,
     door,
     pianoAnchor,

@@ -327,3 +327,35 @@ def plaster(name, color=(0.06, 0.045, 0.035)):
     l.new(noise.outputs['Fac'], bump.inputs['Height'])
     l.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
     return m
+
+
+def pinstripe(name, base=(0.045, 0.05, 0.06), stripe=(0.35, 0.34, 0.32), spacing=0.012):
+    """Lã de terno com risca de giz fina e trama."""
+    m, nt, n, l, bsdf = _nodes(name)
+    coord = n.new('ShaderNodeTexCoord')
+    sep = n.new('ShaderNodeSeparateXYZ')
+    l.new(coord.outputs['Object'], sep.inputs['Vector'])
+    mul = n.new('ShaderNodeMath')
+    mul.operation = 'MULTIPLY'
+    mul.inputs[1].default_value = 2 * 3.14159265 / spacing
+    l.new(sep.outputs['X'], mul.inputs[0])
+    sine = n.new('ShaderNodeMath')
+    sine.operation = 'SINE'
+    l.new(mul.outputs['Value'], sine.inputs[0])
+    line = n.new('ShaderNodeMath')
+    line.operation = 'GREATER_THAN'
+    line.inputs[1].default_value = 0.96
+    l.new(sine.outputs['Value'], line.inputs[0])
+    weave = n.new('ShaderNodeTexNoise')
+    weave.inputs['Scale'].default_value = 400.0
+    weave.inputs['Detail'].default_value = 2.0
+    l.new(coord.outputs['Object'], weave.inputs['Vector'])
+    col = _mix(n, l, base, tuple(c * 0.45 + b * 0.55 for c, b in zip(stripe, base)), line.outputs['Value'])
+    col = _mix(n, l, col, weave.outputs['Color'], 0.12, 'OVERLAY')
+    l.new(col, bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value = 0.85
+    bump = n.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = 0.2
+    l.new(weave.outputs['Fac'], bump.inputs['Height'])
+    l.new(bump.outputs['Normal'], bsdf.inputs['Normal'])
+    return m

@@ -1,4 +1,4 @@
-# Spirits & Spirits
+# On the House
 
 Um jogo de bartender em primeira pessoa. O turno começa com clientes comuns, um manual de receitas e um posto fixo atrás do balcão. O protótipo percorre nove atendimentos e introduz a primeira estranheza do turno. A primeira entrega acadêmica e seus resultados estão preservados em [Entrega 01](docs/entrega-01.md).
 

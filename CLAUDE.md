@@ -1,6 +1,6 @@
-# Spirits & Spirits · instruções para agentes
+# On the House · instruções para agentes
 
-Jogo VR de bartender com terror psicológico estilizado, para a turma de Experiências Imersivas. Dono: Felipe. Fale em **português**.
+Jogo VR de bartender com terror psicológico estilizado, para a turma de Experiências Imersivas. Dono: Felipe. Fale em **português**. Nome escolhido pelo Felipe em 26/11/2026: **On the House** (antes "Spirits & Spirits"; o devlog mantém o nome antigo no arquivo).
 
 ## Stack e comandos
 

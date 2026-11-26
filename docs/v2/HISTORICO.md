@@ -104,3 +104,7 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe:** "logico que a nossa versao ne, a mais avancada v2. o nome do jogo quero que voce sugira. algo relacionado a barman, e que HINTE a algo creepie e eerie. mas algo nessa vibe. E sobre a equipe, sim eels sabem"
 → Base do jogo: v2 (R3F). As funções do PR #1 serão refeitas na v2. Nome novo: sugestões em discussão (o nome "Spirits & Spirits" será substituído).
+
+**Felipe:** "vamos de on the house mesmo. e pode comecar"
+→ Nome do jogo: **On the House** ("por conta da casa": a Casa é o bar, que cobra no contrato do epílogo). Trocado no título, barra, créditos, placa da cena do jogo, README, CLAUDE.md, visao.md e package.json. Documentos antigos (devlog, ficha v1, moodboard, planta_v1) ficam como estavam (acervo). O laboratório de arte (`estilos.html`, `art/blender/labels.py`) é da frente da arte.
+→ Começa o porte das funções do PR #1 da equipe para a v2.

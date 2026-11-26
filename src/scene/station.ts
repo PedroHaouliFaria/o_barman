@@ -58,7 +58,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   const person = target('customer', 'Cliente', [0, 0, -1.53]);
   const hand = target('receiving-hand', 'Entregar na mão', [0.21, 1.32, 0.64], false, person);
   const drawCustomer = customer(person, hand);
-  label(root, [0, 2.41, -3.72], 1.74, 0.32, { lines: ['SPIRITS & SPIRITS'], bg: '#26433b', ink: '#f0dcb3', font: 0.39, center: true });
+  label(root, [0, 2.41, -3.72], 1.74, 0.32, { lines: ['ON THE HOUSE'], bg: '#26433b', ink: '#f0dcb3', font: 0.39, center: true });
   const clock = label(root, [0, 1.95, -3.7], 0.51, 0.15, { lines: ['22h00'], font: 0.57, center: true });
   const request = label(root, [-0.69, 1.67, -1.43], 0.73, 0.4, {}, '0 16 0');
   const manual = group(root, [0.99, 1.085, -0.12]);

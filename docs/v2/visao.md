@@ -1,4 +1,4 @@
-# Spirits & Spirits · Visão da v2 (redesign)
+# On the House · Visão da v2 (redesign)
 
 Documento vivo da reconstrução do jogo. Versões antigas vão para `docs/v2/historico/`; nada é sobrescrito.
 

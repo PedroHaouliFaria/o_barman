@@ -174,7 +174,7 @@ byId('help').onclick = () =>
   );
 byId('credits').onclick = () =>
   openInfo(
-    '<h2>Créditos</h2><p>Spirits &amp; Spirits é um projeto acadêmico em desenvolvimento. A equipe ainda não informou os nomes e as atribuições dos integrantes.</p><p>Cena em React Three Fiber (Three.js) e WebXR, física Rapier. Os sons de interação são sintetizados no navegador.</p>',
+    '<h2>Créditos</h2><p>On the House é um projeto acadêmico em desenvolvimento. A equipe ainda não informou os nomes e as atribuições dos integrantes.</p><p>Cena em React Three Fiber (Three.js) e WebXR, física Rapier. Os sons de interação são sintetizados no navegador.</p>',
   );
 byId('sound').onclick = () => {
   const enabled = audio.toggle();

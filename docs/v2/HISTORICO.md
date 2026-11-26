@@ -86,3 +86,6 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe (26/11/2026):** "pode gerar TODOS do ato 1 sim"
 → Ato I completo no estilo Máscara (`build_mascaras.py`): Executivo (agora com maleta de couro), Turista, Aposentado (agora com colete e bengala) e a nova **Festeira** (vestido de franjas anos 20, faixa com pena e joia, colar longo de pérolas, luvas pretas longas, piteira com brasa, sombra nos olhos e pinta). Cena: `estilos.html?pessoas=ato1`. Imagens: `estilos/ato1_*_v1.jpg`.
+
+**Felipe (26/11/2026):** "Sim, Ato II"
+→ Ato II completo no estilo Máscara: **Cavalheiro** (fraque com abas, colete e gravata-borboleta brancos, cartola, monóculo com corrente, bengala de castão prateado; máscara pálida, simétrica, sem expressão), **Universitário** (suéter de losangos pintado por código, cachecol listrado, boina, livros, sardas, sorriso largo; sentado à mesa), **Detetive** (dois rostos) e **Homem Encharcado** (capa oleada brilhante, chapéu de pescador, botas, gotas, poça; a tinta dos olhos escorre pela máscara molhada). Cena: `estilos.html?pessoas=ato2`. Imagens: `estilos/ato2_*_v1.jpg`.

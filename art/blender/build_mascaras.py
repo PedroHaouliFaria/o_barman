@@ -42,6 +42,22 @@ PEOPLE = {
                        shirt=(0.88, 0.86, 0.8), tie=(0.15, 0.22, 0.32), hair='calvo', hair_color=(0.52, 0.5, 0.48),
                        iris=(0.35, 0.42, 0.45), mood='sereno', nose=1.25, lips=(0.6, 0.3, 0.28), blush=0.35,
                        mustache=True, glasses=True, vest=(0.32, 0.18, 0.12), cane=True),
+    # cliente 5: elegante, sério, perfeito demais; pede o absurdo com naturalidade
+    'cavalheiro': dict(body='fraque', seated=False, suit=(0.03, 0.03, 0.035), shirt=(0.95, 0.94, 0.92),
+                       hair='pomada', hair_color=(0.03, 0.025, 0.025), iris=(0.42, 0.42, 0.42), mood='perfeito',
+                       nose=0.9, lips=(0.62, 0.4, 0.38), blush=0.0, pale=True, hat='cartola', monocle=True,
+                       cane='prata'),
+    # cliente 6: jovem descontraído, devolve a sensação de segurança
+    'universitario': dict(body='sueter', seated=True, sweater=(0.45, 0.1, 0.09), argyle=(0.78, 0.66, 0.36),
+                          argyle_line=(0.1, 0.13, 0.28), trousers=(0.6, 0.52, 0.38), shirt=(0.86, 0.88, 0.92),
+                          hair='la', hair_color=(0.28, 0.15, 0.07), iris=(0.28, 0.32, 0.15), mood='animado',
+                          nose=0.75, lips=(0.62, 0.3, 0.28), blush=0.5, freckles=True, hat='boina',
+                          scarf=((0.12, 0.16, 0.38), (0.78, 0.62, 0.2)), books=True),
+    # cliente 8: capa de chuva sem estar chovendo, sempre molhado; a tinta dos olhos escorre
+    'encharcado': dict(body='capa', seated=False, coat=(0.22, 0.26, 0.1), shirt=(0.22, 0.26, 0.1),
+                       hair='la', hair_color=(0.03, 0.03, 0.03), iris=(0.2, 0.26, 0.26), mood='molhado',
+                       nose=1.1, lips=(0.42, 0.32, 0.32), blush=0.0, hat='pescador', escorre=True, wet=True,
+                       drops=True),
     # cliente 7: reservada, observadora; ao virar de costas revela um segundo rosto na nuca
     'detetive': dict(body='sobretudo', seated=False, coat=(0.6, 0.48, 0.32), coat2=(0.34, 0.25, 0.16),
                      shirt=(0.8, 0.78, 0.72), hair='chanel', hair_color=(0.1, 0.07, 0.06), iris=(0.25, 0.42, 0.3),
@@ -55,6 +71,9 @@ MOODS = {
     'cansado': dict(brow=0.06, mouth=-0.06, lid=0.42, happy=0.0),
     'sorriso': dict(brow=-0.03, mouth=0.14, lid=0.1, happy=0.6),
     'sereno': dict(brow=0.02, mouth=0.04, lid=0.3, happy=0.25),
+    'perfeito': dict(brow=0.0, mouth=0.0, lid=0.12, happy=0.0),
+    'animado': dict(brow=-0.05, mouth=0.22, lid=0.05, happy=0.7),
+    'molhado': dict(brow=0.07, mouth=-0.05, lid=0.35, happy=0.0),
     'festa': dict(brow=-0.05, mouth=0.16, lid=0.28, happy=0.45),
     'desconfiada': dict(brow=-0.02, mouth=-0.01, lid=0.38, happy=0.0),
     # o segundo rosto: olhos pretos pintados e sorriso largo demais
@@ -89,6 +108,10 @@ def paint_eye(x, z, sx, iris, mood):
     return None
 
 
+FRECKLES = [((i * 0.137) % 0.5 - 0.25 + (0.18 if i % 2 else -0.18) * (i % 3 > 0), -0.22 - ((i * 0.071) % 0.2),
+             0.012 + 0.006 * ((i * 7) % 3) / 2) for i in range(46)]
+
+
 def face_color(x, z, p, mood, eyes, ivory, iris, lips, brow_col):
     """Cor (linear) pintada no ponto (x, z) da esfera unitária da máscara."""
     c = list(ivory)
@@ -115,6 +138,18 @@ def face_color(x, z, p, mood, eyes, ivory, iris, lips, brow_col):
         for sx in (-1, 1):
             k = 0.85 * gauss(math.hypot((x - sx * 0.33) / 1.3, z - 0.15), 0.075)
             c = [c[i] * (1 - k) + sh_col[i] * k for i in range(3)]
+    if p.get('freckles'):  # sardas sobre o nariz e as bochechas
+        for fx, fz, fr in FRECKLES:
+            k = smoothstep(fr, fr * 0.5, math.hypot(x - fx, z - fz))
+            c = [ci * (1 - 0.45 * k) + (0.25 if i == 0 else 0.12) * 0.45 * k for i, ci in enumerate(c)]
+    if p.get('escorre'):  # tinta dos olhos lavada pela água, escorrendo até o queixo
+        for sx in (-1, 1):
+            for off, w0, depth in ((0.0, 0.016, -0.82), (0.07, 0.009, -0.5), (-0.06, 0.007, -0.35)):
+                if depth < z < 0.08:
+                    dx = x - sx * (0.33 + off) - 0.012 * math.sin(z * 23 + sx)
+                    w = w0 * (1 + 2.5 * (0.08 - z))
+                    k = smoothstep(w, w * 0.4, abs(dx)) * smoothstep(depth, depth + 0.25, z)
+                    c = [ci * (1 - 0.8 * k) + (0.05, 0.06, 0.08)[i] * 0.8 * k for i, ci in enumerate(c)]
     if p.get('pinta'):  # pinta acima do lábio
         k = smoothstep(0.022, 0.014, math.hypot(x - 0.2, z + 0.47))
         c = [ci * (1 - k) + 0.03 * k for ci in c]
@@ -217,7 +252,7 @@ def sculpt_face(x, z, mood, nose, eyes):
 
 def build_mask_head(parts, key, p, head_c, eyes='pintado'):
     mood = MOODS[p['mood']]
-    ivory = lin((0.93, 0.89, 0.82))
+    ivory = lin((0.97, 0.96, 0.95) if p.get('pale') else (0.93, 0.89, 0.82))
     iris = lin(p['iris'])
     lips = lin(p['lips'])
     brow_col = lin(tuple(c * 0.8 for c in p['hair_color']))
@@ -245,6 +280,11 @@ def build_mask_head(parts, key, p, head_c, eyes='pintado'):
         parts.append(lathe_at('presilha', [(0.0, 0), (0.06, 0.0), (0.06, 0.012), (0, 0.012)],
                               head_c + Vector((0, -0.1, 0.13)), P('presilha', lin((0.55, 0.1, 0.12)), roughness=0.4),
                               24, rot=(math.radians(60), 0, 0)))
+    elif p['hair'] == 'pomada':  # penteado para trás, brilhante, risca lateral
+        slick = P(f'{key}_brilhantina', lin(p['hair_color']), roughness=0.22)
+        parts.append(hair_shell('cabelo', head_c, (0.157, 0.167, 0.186), -math.pi, math.pi,
+                                lambda lon: 0.5 * max(0.0, math.cos(lon)) ** 2 - 0.3 * (1 - max(0.0, math.cos(lon)) ** 2),
+                                lambda lon: math.pi / 2 - 0.001, slick, nu=128, nv=28, wrap=True))
     elif p['hair'] == 'chanel':
         for a0, a1 in ((math.radians(40), math.radians(130)), (math.radians(230), math.radians(320))):
             parts.append(hair_shell('cabelo', head_c, (0.158, 0.168, 0.187), a0, a1,
@@ -259,10 +299,39 @@ def build_mask_head(parts, key, p, head_c, eyes='pintado'):
                                 lambda lon: -0.3 + 0.05 * math.cos(lon * 3),
                                 lambda lon: 0.12 + 0.12 * max(0.0, -math.cos(lon)) + 0.025 * math.sin(lon * 11),
                                 hair_mat, nu=96, nv=16, wave=0.012))
-    if p.get('hat'):
+    hat = p.get('hat')
+    top_z = head_c.z + 0.13
+    if hat == 'cartola':
+        silk = P(f'{key}_cartola', lin((0.02, 0.02, 0.022)), roughness=0.25)
+        parts.append(lathe_at('aba', [(0.0, 0.0), (0.2, 0.0), (0.215, 0.012), (0.205, 0.016), (0.0, 0.016)],
+                              Vector((0, 0.005, top_z)), silk, 56, rot=(math.radians(-5), 0, 0)))
+        parts.append(lathe_at('copa', [(0.0, 0.0), (0.14, 0.0), (0.135, 0.12), (0.145, 0.2), (0.0, 0.2)],
+                              Vector((0, 0.005, top_z + 0.01)), silk, 48, rot=(math.radians(-5), 0, 0)))
+        parts.append(lathe_at('fita', [(0.142, 0.0), (0.146, 0.0), (0.144, 0.04), (0.14, 0.04)],
+                              Vector((0, 0.005, top_z + 0.012)), P('cetim', lin((0.06, 0.05, 0.06)), roughness=0.15),
+                              48, rot=(math.radians(-5), 0, 0)))
+    elif hat == 'boina':
+        wool = P(f'{key}_boina', lin((0.16, 0.18, 0.24)), roughness=0.9)
+        parts.append(lathe_at('boina', [(0.0, 0.07), (0.12, 0.065), (0.2, 0.035), (0.19, 0.0), (0.15, -0.01),
+                                        (0.0, 0.0)], Vector((0.02, 0.0, top_z - 0.02)), wool, 48,
+                              rot=(math.radians(-6), math.radians(14), 0)))
+        parts.append(lathe_at('pino', [(0.0, 0.0), (0.008, 0.0), (0.006, 0.02), (0.0, 0.022)],
+                              Vector((0.0, -0.005, top_z + 0.05)), wool, 8))
+    elif hat == 'pescador':
+        oil = P(f'{key}_oleado', lin(p['coat']), roughness=0.12)
+        parts.append(lathe_at('copa', [(0.0, 0.0), (0.155, 0.0), (0.15, 0.08), (0.11, 0.13), (0.0, 0.14)],
+                              Vector((0, -0.005, top_z - 0.01)), oil, 48))
+        brim = lib.lathe('aba', [(0.15, 0.0), (0.25, -0.05), (0.26, -0.06), (0.255, -0.05), (0.15, 0.008)], 56)
+        for v in brim.data.vertices:  # aba mais longa e caída atrás
+            if v.co.y > 0.0:
+                v.co.y *= 1.35
+                v.co.z -= 0.05 * v.co.y
+        brim.location = Vector((0, -0.005, top_z))
+        lib.assign(brim, oil)
+        parts.append(lib.link(brim))
+    if hat is True or hat == 'fedora':
         felt = P(f'{key}_chapeu', lin((0.16, 0.13, 0.1)), roughness=0.8)
         band = P(f'{key}_fita_chapeu', lin((0.08, 0.05, 0.04)), roughness=0.4)
-        top_z = head_c.z + 0.13
         parts.append(lathe_at('aba', [(0.0, 0.0), (0.25, -0.012), (0.255, 0.0), (0.24, 0.012), (0.0, 0.012)],
                               Vector((0, 0.01, top_z)), felt, 56, rot=(math.radians(-8), 0, 0)))
         crown = lib.lathe('copa', [(0.0, 0.0), (0.15, 0.0), (0.155, 0.07), (0.145, 0.12), (0.09, 0.145),
@@ -313,8 +382,8 @@ def build_mask_head(parts, key, p, head_c, eyes='pintado'):
     face = paint_face_image(f'rosto_{key}', p, mood, eyes, ivory, iris, lips, brow_col)
     face_mat = lib.textured(f'porcelana_{key}', face)
     bsdf = face_mat.node_tree.nodes['Principled BSDF']
-    bsdf.inputs['Roughness'].default_value = 0.22
-    bsdf.inputs['Coat Weight'].default_value = 0.8
+    bsdf.inputs['Roughness'].default_value = 0.06 if p.get('wet') else 0.22
+    bsdf.inputs['Coat Weight'].default_value = 1.0 if p.get('wet') else 0.8
     lib.assign(mask, face_mat)
     parts.append(lib.to_mesh(mask))
     ribbon = P(f'{key}_fita', lin((0.35, 0.05, 0.06)), roughness=0.4)
@@ -406,6 +475,62 @@ def accessories(parts, key, p, wrists, head_c, dz):
         parts.append(lib.to_mesh(lib.assign(lib.tube_along('bengala', [(x0, 0.25, 0.0), (x0, 0.32, 0.82),
                                                                          (x0, 0.36, 0.88), (x0, 0.42, 0.86),
                                                                          (x0, 0.43, 0.82)], 0.011, 10), wood)))
+    if p.get('monocle'):  # monóculo no olho direito, corrente até o colete
+        silver = P('prata', lin((0.8, 0.8, 0.78)), roughness=0.2, metallic=1.0)
+        ring = [tuple(head_c + Vector((-0.05 + 0.03 * math.cos(a), 0.178, 0.018 + 0.03 * math.sin(a))))
+                for a in [i / 24 * 2 * math.pi for i in range(25)]]
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('monoculo', ring, 0.0025, 6), silver)))
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('corrente', [
+            tuple(head_c + Vector((-0.075, 0.17, -0.02))), (-0.11, 0.17, 1.2 + dz), (-0.1, 0.16, 1.05 + dz),
+            (-0.07, 0.15, 0.98 + dz)], 0.0015, 4), silver)))
+    if p.get('cane') == 'prata':  # bengala preta com castão de prata na mão direita
+        silver = P('prata', lin((0.8, 0.8, 0.78)), roughness=0.2, metallic=1.0)
+        el, wr = wrists[-1]
+        top = wr + Vector((0, 0.03, 0.02))
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('bengala', [tuple(top), (top.x, top.y + 0.06, 0.0)], 0.009, 10),
+                                            P('ebano', lin((0.02, 0.018, 0.016)), roughness=0.2))))
+        parts.append(sphere('castao', top + Vector((0, 0, 0.02)), (0.022, 0.022, 0.028), silver, 16, 12))
+    if p.get('scarf'):  # cachecol listrado da faculdade: volta no pescoço e ponta caída
+        c1 = P(f'{key}_cachecol1', lin(p['scarf'][0]), roughness=0.95)
+        c2 = P(f'{key}_cachecol2', lin(p['scarf'][1]), roughness=0.95)
+        loop = [Vector((0.11 * math.sin(a), 0.11 * math.cos(a) - 0.005, 1.29 + dz + 0.01 * math.sin(a * 2)))
+                for a in [i / 24 * 2 * math.pi for i in range(25)]]
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('cachecol_volta', [tuple(v) for v in loop], 0.028, 10), c1)))
+        hang = [Vector((0.06, 0.13, 1.28 + dz)), Vector((0.08, 0.17, 1.1 + dz)), Vector((0.09, 0.175, 0.9 + dz))]
+        for i in range(8):  # listras: segmentos alternados
+            a = hang[0].lerp(hang[1], i / 8) if i < 4 else hang[1].lerp(hang[2], (i - 4) / 4)
+            b = hang[0].lerp(hang[1], (i + 1) / 8) if i < 3 else hang[1].lerp(hang[2], (i - 3) / 4)
+            seg = lib.tube_along('cachecol_ponta', [tuple(a), tuple(b)], 0.022, 8)
+            seg.scale = (1, 1, 1)
+            parts.append(lib.to_mesh(lib.assign(seg, c1 if i % 2 else c2)))
+    if p.get('books'):  # dois livros sobre a mesa à frente
+        for i, (col, h) in enumerate((((0.3, 0.08, 0.06), 0.035), ((0.08, 0.18, 0.12), 0.03))):
+            z0 = 0.775 + i * 0.035
+            parts.append(prism('livro', z0, z0 + h, (0.08, 0.11), (0.08, 0.11), P(f'livro{i}', lin(col), roughness=0.6),
+                               center0=(0.22 - i * 0.01, 0.42 + i * 0.01), bevel=0.004))
+            parts.append(prism('paginas', z0 + 0.003, z0 + h - 0.003, (0.075, 0.105), (0.075, 0.105),
+                               P('paginas', lin((0.85, 0.8, 0.68)), roughness=0.9),
+                               center0=(0.226 - i * 0.01, 0.42 + i * 0.01), bevel=0.0))
+    if p.get('drops'):  # gotas paradas no chapéu e na barra, e a poça aos pés
+        water = P('agua', lin((0.6, 0.65, 0.6)), roughness=0.02, transmission=0.9, ior=1.33)
+        for i in range(26):
+            a = i / 26 * 2 * math.pi + 0.3
+            pos = head_c + Vector((0.255 * math.sin(a), -0.005 + 0.255 * math.cos(a) * (1.35 if math.cos(a) < 0 else 1.0),
+                                   0.13 - 0.07 - 0.05 * max(0.0, -math.cos(a))))
+            parts.append(sphere('gota', pos, (0.006, 0.006, 0.011), water, 8, 6))
+        for i in range(30):
+            a = i / 30 * 2 * math.pi
+            pos = Vector((0.27 * math.sin(a) * 0.98, 0.19 * math.cos(a), 0.22 + dz - 0.01 * (i % 3)))
+            parts.append(sphere('gota', pos, (0.006, 0.006, 0.012), water, 8, 6))
+        puddle = lib.lathe('poca', [(0.0, 0.0), (0.42, 0.0), (0.44, 0.002), (0.0, 0.003)], 48)
+        for v in puddle.data.vertices:
+            ang = math.atan2(v.co.x, v.co.y)
+            k = 1 + 0.18 * math.sin(ang * 3) + 0.1 * math.sin(ang * 7)
+            v.co.x *= k
+            v.co.y *= k
+        puddle.location = (0.0, 0.08, 0.001)
+        lib.assign(puddle, P('poca', lin((0.03, 0.035, 0.03)), roughness=0.02))
+        parts.append(lib.link(puddle))
     if p['body'] == 'melindrosa':
         pearl = P('perola', lin((0.92, 0.9, 0.86)), roughness=0.15)
         # colar longo de pérolas em laço até a cintura
@@ -459,6 +584,33 @@ def accessories(parts, key, p, wrists, head_c, dz):
                             P('brasa', lin((1, 0.4, 0.1)), emission=lin((1, 0.35, 0.05)), strength=8), 8, 6))
 
 
+def argyle_image(name, base, diamond, line, size=512):
+    """Losangos de tricô (tile de 0,24 m): fundo, losangos alternados e linhas finas cruzadas."""
+    img = bpy.data.images.new(name, size, size)
+    px = [0.0] * (size * size * 4)
+    for j in range(size):
+        v = j / size
+        for i in range(size):
+            u = i / size
+            du, dv = abs((u * 2) % 1 - 0.5), abs((v * 2) % 1 - 0.5)
+            inside = du + dv < 0.5
+            cell = (int(u * 2) + int(v * 2)) % 2
+            c = diamond if inside and cell == 0 else base
+            if inside and cell == 1:
+                c = tuple(b * 0.8 for b in base)
+            for t in (u * 2 + v * 2, u * 2 - v * 2):  # linhas diagonais finas
+                if abs(t - round(t)) < 0.012:
+                    c = line
+            knit = 0.92 + 0.08 * math.sin(i * 0.9) * math.sin(j * 1.3)
+            k = (j * size + i) * 4
+            px[k:k + 4] = (srgb(c[0] * knit), srgb(c[1] * knit), srgb(c[2] * knit), 1.0)
+    img.pixels.foreach_set(px)
+    img.filepath_raw = os.path.join(TEX, name + '.png')
+    img.file_format = 'PNG'
+    img.save()
+    return img
+
+
 def fringe(name, z0, length, hx, hy, mat, n=72):
     """Fileira de franjas finas ao redor de um retângulo arredondado (um só objeto)."""
     bm = bmesh.new()
@@ -502,7 +654,8 @@ def build_person(key, p):
     parts = []
     seated = p['seated']
     dz = -0.14 if seated else 0.0          # sentado: tronco desce até o assento (0.46)
-    glove_col = {'sobretudo': (0.12, 0.08, 0.06), 'melindrosa': (0.03, 0.025, 0.025)}.get(p['body'], (0.92, 0.9, 0.85))
+    glove_col = {'sobretudo': (0.12, 0.08, 0.06), 'melindrosa': (0.03, 0.025, 0.025),
+                 'capa': (0.04, 0.045, 0.03)}.get(p['body'], (0.92, 0.9, 0.85))
     glove = P(f'{key}_luva', lin(glove_col), roughness=0.3 if p['body'] == 'melindrosa' else 0.5)
     shoe = P(f'{key}_sapato', lin((0.06, 0.04, 0.03)), roughness=0.25)
     shirt = P(f'{key}_camisa', lin(p['shirt']), roughness=0.6)
@@ -573,6 +726,84 @@ def build_person(key, p):
                            center0=(0, 0.125), center1=(0, 0.11), bevel=0.0))
         sleeve_mat = coat
         legs_mat = P(f'{key}_meia', lin((0.1, 0.07, 0.06)), roughness=0.5)
+    elif p['body'] == 'fraque':
+        black = P(f'{key}_fraque', lin(p['suit']), roughness=0.55)
+        satin = P(f'{key}_cetim', lin((0.05, 0.05, 0.055)), roughness=0.15)
+        white = P(f'{key}_colete_branco', lin((0.93, 0.92, 0.9)), roughness=0.5)
+        parts.append(prism('paleto', 0.95 + dz, 1.22 + dz, (0.18, 0.12), (0.24, 0.12), black, bevel=0.03))
+        parts.append(prism('ombros', 1.22 + dz, 1.3 + dz, (0.24, 0.12), (0.19, 0.1), black, bevel=0.03))
+        parts.append(prism('cintura', 0.62 + dz, 0.95 + dz, (0.16, 0.11), (0.18, 0.12), black, bevel=0.03))
+        for sx in (-1, 1):  # abas da casaca, atrás, até o joelho
+            parts.append(prism('aba_casaca', 0.42 + dz, 0.98 + dz, (0.075, 0.012), (0.095, 0.015), black,
+                               center0=(sx * 0.07, -0.125), center1=(sx * 0.1, -0.12), bevel=0.008))
+            bm = bmesh.new()
+            vs = [bm.verts.new((x, y, z + dz)) for x, y, z in ((sx * 0.03, 0.15, 0.97), (sx * 0.2, 0.142, 1.2),
+                                                                (sx * 0.12, 0.132, 1.29), (sx * 0.06, 0.15, 1.05))]
+            bm.faces.new(vs if sx > 0 else list(reversed(vs)))
+            me = bpy.data.meshes.new('lapela')
+            bm.to_mesh(me)
+            bm.free()
+            lap = bpy.data.objects.new('lapela', me)
+            sol = lap.modifiers.new('esp', 'SOLIDIFY')
+            sol.thickness = 0.015
+            sol.offset = 0.0
+            lib.assign(lap, satin)
+            parts.append(lib.to_mesh(lib.link(lap)))
+        parts.append(prism('colete', 0.8 + dz, 1.2 + dz, (0.1, 0.006), (0.04, 0.006), white, center0=(0, 0.14),
+                           center1=(0, 0.13), bevel=0.0))
+        parts.append(prism('peitilho', 1.12 + dz, 1.26 + dz, (0.03, 0.005), (0.07, 0.005), shirt, center0=(0, 0.146),
+                           center1=(0, 0.128), bevel=0.0))
+        for i in range(3):
+            parts.append(lathe_at('botao', [(0, 0), (0.009, 0), (0.009, 0.004), (0, 0.006)],
+                                  (0.0, 0.147, 0.88 + i * 0.08 + dz), P('perola', lin((0.92, 0.9, 0.86)), roughness=0.15),
+                                  10, rot=(-math.pi / 2, 0, 0)))
+        for sx in (-1, 1):  # gravata-borboleta branca
+            parts.append(prism('laco', 1.235 + dz, 1.265 + dz, (0.002, 0.006), (0.006, 0.006), white,
+                               center0=(sx * 0.008, 0.152), center1=(sx * 0.04, 0.152), bevel=0.004))
+        parts.append(sphere('no_laco', Vector((0, 0.155, 1.25 + dz)), (0.01, 0.008, 0.012), white, 12, 8))
+        sleeve_mat = black
+        legs_mat = black
+    elif p['body'] == 'sueter':
+        img = argyle_image(f'{key}_losangos', lin(p['sweater']), lin(p['argyle']), lin(p['argyle_line']))
+        knit = lib.textured(f'{key}_sueter', img)
+        knit.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = 0.95
+        rib = P(f'{key}_punho_tricot', tuple(c * 0.7 for c in lin(p['sweater'])), roughness=0.95)
+        body_parts = [prism('sueter', 0.68 + dz, 1.22 + dz, (0.19, 0.125), (0.23, 0.12), knit, bevel=0.035),
+                      prism('ombros', 1.22 + dz, 1.3 + dz, (0.23, 0.12), (0.18, 0.1), knit, bevel=0.03)]
+        for o in body_parts:
+            lib.box_uv(o, 0.24)
+        parts += body_parts
+        parts.append(prism('barra', 0.62 + dz, 0.69 + dz, (0.19, 0.125), (0.19, 0.125), rib, bevel=0.015))
+        for sx in (-1, 1):  # pontas da gola da camisa por cima do suéter
+            bm = bmesh.new()
+            vs = [bm.verts.new((x, y, z + dz)) for x, y, z in ((sx * 0.01, 0.13, 1.25), (sx * 0.07, 0.115, 1.28),
+                                                                (sx * 0.06, 0.135, 1.2))]
+            bm.faces.new(vs if sx > 0 else list(reversed(vs)))
+            me = bpy.data.meshes.new('gola_camisa')
+            bm.to_mesh(me)
+            bm.free()
+            gc = bpy.data.objects.new('gola_camisa', me)
+            sol = gc.modifiers.new('esp', 'SOLIDIFY')
+            sol.thickness = 0.006
+            sol.offset = 0.0
+            lib.assign(gc, shirt)
+            parts.append(lib.to_mesh(lib.link(gc)))
+        sleeve_mat = knit
+        legs_mat = P(f'{key}_calca', lin(p['trousers']), roughness=0.85)
+    elif p['body'] == 'capa':
+        oil = P(f'{key}_oleado', lin(p['coat']), roughness=0.12)
+        oil.node_tree.nodes['Principled BSDF'].inputs['Coat Weight'].default_value = 1.0
+        parts.append(prism('capa', 0.24 + dz, 1.22 + dz, (0.27, 0.19), (0.23, 0.13), oil, bevel=0.035))
+        parts.append(prism('ombros', 1.22 + dz, 1.3 + dz, (0.23, 0.13), (0.18, 0.1), oil, bevel=0.03))
+        parts.append(prism('aba_tempestade', 0.45 + dz, 1.24 + dz, (0.05, 0.006), (0.05, 0.006), oil,
+                           center0=(0.04, 0.188 - 0.06), center1=(0.04, 0.135), bevel=0.004))
+        for z in (0.55, 0.75, 0.95, 1.15):
+            parts.append(lathe_at('fivela_capa', [(0, 0), (0.018, 0), (0.018, 0.008), (0, 0.01)],
+                                  (0.07, 0.19 - (z - 0.24) * 0.06 + 0.012, z + dz),
+                                  P('fivela_capa', lin((0.08, 0.08, 0.07)), roughness=0.3), 12,
+                                  rot=(-math.pi / 2, 0, 0)))
+        sleeve_mat = oil
+        legs_mat = P(f'{key}_bota', lin((0.03, 0.03, 0.028)), roughness=0.2)
     elif p['body'] == 'melindrosa':
         dress = P(f'{key}_vestido', lin(p['dress']), roughness=0.35, metallic=0.6)
         parts.append(prism('vestido', 0.46 + dz, 1.22 + dz, (0.2, 0.15), (0.19, 0.115), dress, bevel=0.03))
@@ -612,10 +843,12 @@ def build_person(key, p):
                                                                          (0, -0.06, 1.33 + dz), (0.1, 0.05, 1.3 + dz),
                                                                          (0.06, 0.13, 1.06 + dz)], 0.005, 6), body)))
     # gola alta (esconde o pescoço): colarinho no terno, renda no vestido
-    collar = lib.lathe('gola', [(0.1, 0.0), (0.095, 0.11)] if p['body'] == 'terno' else
+    collar = lib.lathe('gola', [(0.1, 0.0), (0.095, 0.11)] if p['body'] in ('terno', 'fraque') else
+                       [(0.115, 0.0), (0.105, 0.08), (0.12, 0.15)] if p['body'] == 'capa' else
                        [(0.09, 0.0), (0.094, 0.03), (0.09, 0.06), (0.094, 0.09), (0.09, 0.12)] if p['body'] == 'melindrosa' else
                        [(0.1, 0.0), (0.085, 0.06), (0.1, 0.12)], 40,
-                       arc=(math.pi * 0.15, math.pi * 1.85) if p['body'] == 'terno' else (0, 2 * math.pi))
+                       arc=(math.pi * 0.15, math.pi * 1.85) if p['body'] in ('terno', 'fraque') else
+                       (math.pi * 0.25, math.pi * 1.75) if p['body'] == 'capa' else (0, 2 * math.pi))
     collar.location = (0, -0.005, 1.28 + dz)
     collar.modifiers.new('esp', 'SOLIDIFY').thickness = 0.01
     lib.assign(collar, shirt)
@@ -639,9 +872,16 @@ def build_person(key, p):
             parts.append(lathe_at('sapato', [(0, 0), (0.06, 0), (0.065, 0.03), (0.045, 0.06), (0, 0.065)],
                                   (x, 0.45, 0.0), shoe, 28, scale=(0.95, 1.6, 1.0)))
         else:
-            if p['body'] == 'terno':
+            if p['body'] in ('terno', 'fraque', 'sueter'):
                 parts.append(prism('calca', 0.06, 0.66, (0.07, 0.075), (0.09, 0.1), legs_mat, center0=(x, 0),
                                    center1=(x, 0), bevel=0.02))
+                if p['body'] == 'fraque':  # galão de cetim na lateral
+                    parts.append(prism('galao', 0.08, 0.64, (0.004, 0.01), (0.004, 0.01),
+                                       P('galao', lin((0.06, 0.06, 0.065)), roughness=0.12),
+                                       center0=(x + sx * 0.072, 0), center1=(x + sx * 0.092, 0), bevel=0.0))
+            elif p['body'] == 'capa':  # botas altas de borracha
+                parts.append(prism('bota', 0.0, 0.38, (0.075, 0.12), (0.08, 0.08), legs_mat, center0=(x, 0.04),
+                                   center1=(x, 0.0), bevel=0.025))
             else:
                 parts.append(chain_skin('perna', [Vector((x, 0, 0.5)), Vector((x, 0.01, 0.08))],
                                         [(0.045, 0.045), (0.032, 0.032)], 2, legs_mat))

@@ -27,6 +27,9 @@ const VIEWS = {
   aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
   executivo_lado: { name: 'Executivo de lado', pos: [0.75, 1.55, -1.05], look: [0, 1.4, -1.6] },
   aposentado_lado: { name: 'Aposentado de lado', pos: [-0.75, 1.4, -4.4], look: [-1.32, 1.25, -4.7] },
+  cavalheiro: { name: 'Cavalheiro de perto', pos: [0, 1.68, -0.72], look: [0, 1.58, -1.6] },
+  encharcado: { name: 'Encharcado de perto', pos: [0.72, 1.62, -0.78], look: [0.95, 1.48, -1.65] },
+  encharcado_corpo: { name: 'Encharcado inteiro', pos: [0.4, 1.5, -0.3], look: [0.95, 0.9, -1.65] },
   festeira: { name: 'Festeira de perto', pos: [0.75, 1.62, -0.75], look: [0.95, 1.45, -1.62] },
   festeira_corpo: { name: 'Festeira inteira', pos: [0.55, 1.45, -0.35], look: [0.95, 1.05, -1.62] },
   detetive: { name: 'Detetive de perto', pos: [-0.85, 1.6, -0.72], look: [-0.85, 1.5, -1.62] },
@@ -135,7 +138,30 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         bar.applyAssets(assets);
         // ?pessoas: os três estilos do Executivo lado a lado no balcão
         const which = new URLSearchParams(location.search).get('pessoas');
-        if (which === 'ato1') {
+        if (which === 'ato2') {
+          // Ato II: Detetive (vira de costas), Cavalheiro e Encharcado no balcão; Universitário à mesa
+          bar.frontCustomer.visible = false;
+          loadModels(['mascara_detetive', 'mascara_cavalheiro', 'mascara_encharcado', 'mascara_universitario', 'mascara_aposentado']).then(
+            ([detetive, cavalheiro, encharcado, universitario, aposentado]) => {
+              if (!alive) return;
+              detetive.position.set(-0.95, 0, -1.62);
+              detetive.rotation.y = Math.PI;
+              turners.push(detetive);
+              cavalheiro.position.set(0, 0, -1.6);
+              cavalheiro.rotation.y = Math.PI;
+              encharcado.position.set(0.95, 0, -1.65);
+              encharcado.rotation.y = Math.PI - 0.3;
+              bar.root.add(detetive, cavalheiro, encharcado);
+              bar.tableFigures.slice(0, 2).forEach((f, i) => {
+                const person = [universitario, aposentado][i];
+                person.position.copy(f.position);
+                person.rotation.copy(f.rotation);
+                f.visible = false;
+                f.parent!.add(person);
+              });
+            },
+          );
+        } else if (which === 'ato1') {
           // Ato I completo: Executivo e Festeira no balcão; Turista e Aposentado à mesa
           bar.frontCustomer.visible = false;
           loadModels(['mascara_executivo', 'mascara_festeira', 'mascara_turista', 'mascara_aposentado']).then(

@@ -145,6 +145,7 @@ function render() {
 }
 function act(action: Action) {
   audio.unlock();
+  station?.startMusic();
   if (action.type === 'restart' || action.type === 'togglePause') sugarScooped = false;
   const result = game.dispatch(action as any);
   updateAddButton();
@@ -195,6 +196,8 @@ byId('credits').onclick = () =>
   );
 byId('sound').onclick = () => {
   const enabled = audio.toggle();
+  station?.startMusic();
+  station?.setSound(enabled);
   byId('sound').setAttribute('aria-pressed', String(enabled));
   byId('sound').textContent = 'Som';
 };

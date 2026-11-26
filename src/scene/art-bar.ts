@@ -57,6 +57,15 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
     return assets;
   });
 
+  // Pianista de porcelana (estilo Máscara), de costas no banco do piano.
+  loadModels(['mascara_pianista']).then(([pianist]) => {
+    const f = bar.pianistFigure;
+    pianist.position.copy(f.position);
+    pianist.rotation.copy(f.rotation);
+    f.visible = false;
+    f.parent!.add(pianist);
+  });
+
   // Pessoas sentadas às mesas: os clientes sentados esperam ali até a vez deles.
   const tablePeople: THREE.Object3D[] = [];
   const seatedLoaded = loadModels(['mascara_turista', 'mascara_aposentado', 'mascara_universitario']).then((models) => {

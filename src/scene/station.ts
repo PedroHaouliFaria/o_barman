@@ -10,6 +10,8 @@ import { bindControls } from '../interaction/controls';
 import { box, cone, customer, cylinder, group, rotate, room, sphere, torus, type Vec3 } from './blockout';
 import { bookPage, medallion, paperLabel, plaque, subtitle, ticket, type Panel } from '../ui/world-ui';
 import { buildEvents, specimen } from './environment';
+import { createPianist } from '../audio/piano';
+import { createMurmurs } from '../audio/room';
 import { tipJar } from './tip-jar';
 import { toolDrawer } from './tool-drawer';
 import type { Action, Item, Result } from './types';
@@ -65,7 +67,18 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   const art = mountArtBar(root, scene, (x, z, y) =>
     Math.abs(x) < 0.55 && bottleShelves.some((row) => Math.abs(row.top - y) < 0.1 && Math.abs(row.z - z) < 0.2),
   );
-  const illuminate = (act: number) => art.setAct(act);
+  // Som do salão: o pianista e o murmúrio das mesas, posicionais (o ouvido é a câmera/cabeça).
+  const listener = new THREE.AudioListener();
+  ctx.camera().add(listener);
+  const pianist = createPianist(listener, art.bar.pianoAnchor, (hand) => art.bar.strike(hand));
+  const murmurs = createMurmurs(listener, art.bar.murmurAnchors);
+  let soundOn = true;
+  const illuminate = (act: number) => {
+    art.setAct(act);
+    pianist.setAct(act);
+    // O salão vai se calando enquanto a noite piora.
+    murmurs.setLevel(soundOn ? ({ 1: 1, 2: 0.65, 3: 0.3, 4: 0.12 } as Record<number, number>)[act] ?? 0.12 : 0);
+  };
   // ?leve: perfil do Quest também no computador (testes automáticos e máquinas fracas).
   const lightMode = typeof location !== 'undefined' && new URLSearchParams(location.search).has('leve');
   let lastVr: boolean | null = null;
@@ -409,6 +422,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       controls.releaseAll();
       if (newSession) controls.restoreThrown();
     }
+    if (changed && state.phase === 'finished') pianist.finale();
+    if (changed && state.phase === 'playing') pianist.resume();
+    if (pausedChange) pianist.setPaused(state.paused);
     if (changed) {
       controls.clearGlass();
       drawCustomer(state.orderIndex, state.phase === 'playing');
@@ -493,6 +509,19 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   return {
     render,
     recenter,
+    /** Liga a música (precisa de um gesto do jogador antes, por regra dos navegadores). */
+    startMusic() {
+      if (listener.context.state === 'suspended') listener.context.resume().catch(() => {});
+      pianist.start();
+      murmurs.start();
+      illuminate(session.order?.act ?? 1);
+    },
+    music: () => pianist.stats(),
+    setSound(on: boolean) {
+      soundOn = on;
+      pianist.setEnabled(on);
+      illuminate(session.order?.act ?? 1);
+    },
     frame(time: number, dt: number, xrFrame?: XRFrame) {
       const vr = gl.xr.isPresenting || lightMode;
       if (vr !== lastVr) {
@@ -563,6 +592,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       camera.updateMatrixWorld(true);
     },
     destroy() {
+      pianist.dispose();
+      murmurs.dispose();
+      listener.removeFromParent();
       controls.destroy();
       contents.destroy();
       for (const p of panels) p.dispose();

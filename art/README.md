@@ -5,6 +5,7 @@ Todos os assets do jogo são gerados por scripts Python no Blender: modelos, tex
 | Script | Gera |
 |---|---|
 | `blender/build_balcao.py` | `luminaria.glb`, `balcao.glb`, `copos.glb`, `garrafas.glb` (as 15 bebidas engarrafadas do jogo) |
+| `blender/build_salao.py` | `sala` (piso de mármore, lambri, papel de parede, sancas, vigas), `estante`, `banqueta`, `mesa` (com abajur), `cadeira` (madeira curvada), `cabine` (veludo capitonê + arandela), `piano` (cauda + banco), `porta` (moldura + folha), `janela` (com cortinas), `relogio` |
 | `blender/lib.py` | torno (perfis girados), caixas chanfradas, tubos, UV em escala de metro, bake na GPU, exportação glTF |
 | `blender/materials.py` | nogueira envernizada em tábuas, couro, tapete de borracha (nós procedurais assados em textura) |
 | `blender/labels.py` | rótulos renderizados com texto e filetes (fontes Georgia/Bodoni do Windows) |
@@ -16,6 +17,7 @@ O pesado (bake na GPU) roda no Windows (`simaonote`, Blender 5.3 com RTX 4070):
 ```sh
 COPYFILE_DISABLE=1 tar czf - art/blender | ssh simaonote "tar xzf - -C C:/barman"
 ssh simaonote "& 'C:\Program Files\Blender Foundation\Blender 5.3\blender.exe' -b -P C:/barman/art/blender/build_balcao.py -- C:/barman/out"
+ssh simaonote "& 'C:\Program Files\Blender Foundation\Blender 5.3\blender.exe' -b -P C:/barman/art/blender/build_salao.py -- C:/barman/out"
 scp "simaonote:C:/barman/out/*.glb" public/models/
 ```
 

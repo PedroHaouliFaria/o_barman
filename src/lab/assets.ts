@@ -8,7 +8,11 @@ export interface BarAssets {
   balcao: THREE.Object3D;
   copos: Record<string, THREE.Object3D>;
   garrafas: Record<string, THREE.Object3D>;
+  /** sala e móveis, por nome do arquivo */
+  models: Record<string, THREE.Object3D>;
 }
+
+const FURNITURE = ['sala', 'estante', 'banqueta', 'mesa', 'cadeira', 'cabine', 'piano', 'porta', 'janela', 'relogio'];
 
 const loader = new GLTFLoader();
 const base = import.meta.env.BASE_URL + 'models/';
@@ -33,14 +37,16 @@ function fixMaterials(root: THREE.Object3D) {
     const mats = (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as THREE.MeshStandardMaterial[];
     const fixed = mats.map((m) => {
       const name = m.name ?? '';
+      // o mármore claro rouba a cena: escurece para o salão ficar à meia-luz
+      if (name === 'piso') m.color.setScalar(0.42);
       if (name.startsWith('vidro_ambar'))
         return physical(m, {
           transmission: 0.55,
           thickness: 0.003,
           roughness: 0.25,
           side: THREE.DoubleSide,
-          emissive: new THREE.Color('#ff8a2a'),
-          emissiveIntensity: 0.35,
+          emissive: new THREE.Color('#ff7a1a'),
+          emissiveIntensity: 0.12,
           transparent: true,
           opacity: 0.92,
         });
@@ -80,6 +86,15 @@ function fixMaterials(root: THREE.Object3D) {
           roughness: 0.12,
           envMapIntensity: 1.2,
         });
+      if (name.startsWith('cupula_tecido'))
+        return new THREE.MeshStandardMaterial({
+          name, color: m.color, roughness: 0.9, side: THREE.DoubleSide,
+          emissive: new THREE.Color('#ff9a40'), emissiveIntensity: 0.9,
+        });
+      if (name.startsWith('vidro_janela'))
+        return new THREE.MeshStandardMaterial({
+          name, color: '#0b1424', roughness: 0.08, metalness: 0.2, emissive: new THREE.Color('#0a1830'), emissiveIntensity: 0.6,
+        });
       if (name.startsWith('filamento'))
         return new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffb15a').multiplyScalar(6), toneMapped: false });
       return m;
@@ -106,8 +121,9 @@ function byPrefix(root: THREE.Object3D, prefix: string) {
 }
 
 export async function loadBarAssets(): Promise<BarAssets> {
-  const [luminaria, balcao, copos, garrafas] = await Promise.all(
-    ['luminaria.glb', 'balcao.glb', 'copos.glb', 'garrafas.glb'].map(load),
+  const [luminaria, balcao, copos, garrafas, ...furniture] = await Promise.all(
+    ['luminaria', 'balcao', 'copos', 'garrafas', ...FURNITURE].map((n) => load(n + '.glb')),
   );
-  return { luminaria, balcao, copos: byPrefix(copos, 'copo_'), garrafas: byPrefix(garrafas, 'garrafa_') };
+  const models = Object.fromEntries(FURNITURE.map((n, i) => [n, furniture[i]]));
+  return { luminaria, balcao, copos: byPrefix(copos, 'copo_'), garrafas: byPrefix(garrafas, 'garrafa_'), models };
 }

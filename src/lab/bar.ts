@@ -31,7 +31,10 @@ export function buildBar(style: StyleDef): BarScene {
     pendants: [] as { group: THREE.Group; placeholder: THREE.Group; light: THREE.PointLight }[],
     glasses: [] as { group: THREE.Group; kind: string }[],
     shelf: [] as THREE.Group[],
+    /** modelo do Blender que substitui um conjunto de primitivas */
+    models: [] as { holder: THREE.Object3D; key: string; node?: string; placeholders: THREE.Object3D[] }[],
   };
+  const since = (holder: THREE.Object3D, n: number) => holder.children.slice(n);
 
   function add<T extends THREE.Object3D>(parent: THREE.Object3D, obj: T, at: V3 = [0, 0, 0], rotY = 0): T {
     obj.position.set(...at);
@@ -51,6 +54,7 @@ export function buildBar(style: StyleDef): BarScene {
 
   // ---------------- sala ----------------
   const W = 11, X0 = -5.5, X1 = 5.5, ZB = 1.7, ZF = -10, H = 3.4;
+  const room0 = root.children.length;
   const floorGeo = new THREE.PlaneGeometry(W, ZB - ZF);
   const floor = mesh(root, floorGeo, 'floor', [0, 0, (ZB + ZF) / 2]);
   floor.rotation.x = -Math.PI / 2;
@@ -69,6 +73,7 @@ export function buildBar(style: StyleDef): BarScene {
   wall(ZB - ZF, [X0, 0, (ZB + ZF) / 2], Math.PI / 2);
   wall(ZB - ZF, [X1, 0, (ZB + ZF) / 2], -Math.PI / 2);
   wall(W, [0, 0, ZB], Math.PI);
+  slots.models.push({ holder: root, key: 'sala', placeholders: since(root, room0) });
 
   // ---------------- balcão (posto do jogador) ----------------
   const bar = group(root);
@@ -91,6 +96,7 @@ export function buildBar(style: StyleDef): BarScene {
     mesh(s, cyl(0.22, 0.24, 0.03), 'brass', [0, 0.015, 0]);
     const ring = mesh(s, new THREE.TorusGeometry(0.16, 0.012, 6, 20), 'brass', [0, 0.3, 0]);
     ring.rotation.x = Math.PI / 2;
+    slots.models.push({ holder: s, key: 'banqueta', placeholders: [...s.children] });
   }
   // copos e garrafas na bancada
   for (const [x, z, h, kind] of [
@@ -124,6 +130,8 @@ export function buildBar(style: StyleDef): BarScene {
     }
   }
 
+  slots.models.push({ holder: root, key: 'estante', placeholders: back.children.filter((c) => !slots.shelf.includes(c as THREE.Group)) });
+
   // ---------------- luminárias sobre o balcão ----------------
   const flickers: { light: THREE.Light; base: number; seed: number }[] = [];
   function pendant(at: V3, shadow: boolean) {
@@ -144,7 +152,7 @@ export function buildBar(style: StyleDef): BarScene {
     slots.pendants.push({ group: g, placeholder: ph, light });
   }
   pendant([-1.8, 2.45, -0.95], true);
-  pendant([0, 2.45, -0.95], true);
+  pendant([0, 2.05, -0.95], true); // a central desce para aparecer olhando reto
   pendant([1.8, 2.45, -0.95], false);
 
   // ---------------- salão: mesas, cadeiras, cabines ----------------
@@ -154,10 +162,12 @@ export function buildBar(style: StyleDef): BarScene {
     box(c, [0.42, 0.05, 0.42], [0, 0.46, 0], 'wood');
     box(c, [0.42, 0.5, 0.04], [0, 0.73, 0.19], 'wood');
     for (const [x, z] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) box(c, [0.035, 0.46, 0.035], [x, 0.23, z], 'woodDark');
+    slots.models.push({ holder: c, key: 'cadeira', placeholders: [...c.children] });
     return c;
   }
   function table(at: V3, seats: number[], people: { seat: number; look: number; outfit: number; hat?: boolean }[]) {
     const t = group(root, at);
+    const t0 = t.children.length;
     mesh(t, cyl(0.42, 0.42, 0.04, 28), 'tableTop', [0, 0.75, 0]);
     mesh(t, cyl(0.04, 0.05, 0.72, 10), 'brass', [0, 0.37, 0]);
     mesh(t, cyl(0.25, 0.28, 0.03, 20), 'brass', [0, 0.015, 0]);
@@ -165,6 +175,7 @@ export function buildBar(style: StyleDef): BarScene {
     mesh(t, cyl(0.02, 0.03, 0.18, 8), 'brass', [0, 0.86, 0]);
     mesh(t, cyl(0.05, 0.1, 0.09, 16), 'lampShade', [0, 0.98, 0]);
     mesh(t, new THREE.SphereGeometry(0.025, 8, 6), 'candle', [0, 0.95, 0]);
+    slots.models.push({ holder: t, key: 'mesa', placeholders: since(t, t0) });
     const l = new THREE.PointLight(style.light.candle[0], style.light.candle[1], 2.6, 2);
     l.position.set(0, 0.93, 0);
     t.add(l);
@@ -193,6 +204,7 @@ export function buildBar(style: StyleDef): BarScene {
   // cabines de veludo na parede esquerda
   for (const z of [-3.4, -5.6, -7.8]) {
     const b = group(root, [X0 + 0.55, 0, z]);
+    const b0 = b.children.length;
     for (const dz of [-0.75, 0.75]) {
       box(b, [0.9, 0.45, 0.5], [0, 0.225, dz], 'velvet');
       box(b, [0.9, 1.25, 0.14], [0, 0.62, dz + Math.sign(dz) * 0.3], 'velvet');
@@ -202,6 +214,7 @@ export function buildBar(style: StyleDef): BarScene {
     box(b, [0.1, 0.72, 0.1], [0.1, 0.36, 0], 'woodDark');
     // arandela
     mesh(b, new THREE.SphereGeometry(0.06, 12, 8), 'glow', [-0.5, 1.85, 0]);
+    slots.models.push({ holder: b, key: 'cabine', placeholders: since(b, b0) });
     const sc = new THREE.PointLight(style.light.sconce[0], style.light.sconce[1], 3, 2);
     sc.position.set(-0.3, 1.8, 0);
     b.add(sc);
@@ -239,10 +252,12 @@ export function buildBar(style: StyleDef): BarScene {
     box(w, [0.06, 1.9, 0.08], [0, 1.85, 0.01], 'woodDark');
     box(w, [1.1, 0.05, 0.08], [0, 1.85, 0.01], 'woodDark');
     for (const x of [-0.62, 0.62]) box(w, [0.08, 2.0, 0.1], [x, 1.85, 0], 'woodDark');
+    slots.models.push({ holder: w, key: 'janela', placeholders: [...w.children] });
   }
 
   // ---------------- piano e pianista (fundo, à direita) ----------------
   const piano = group(root, [3.4, 0, -8.1], -0.35);
+  const piano0 = piano.children.length;
   {
     // corpo de cauda: perfil curvo extrudado
     const s = new THREE.Shape();
@@ -273,6 +288,7 @@ export function buildBar(style: StyleDef): BarScene {
     // banco
     box(piano, [0.75, 0.06, 0.36], [0, 0.5, 0.62], 'piano');
     for (const [x, z] of [[-0.32, 0.48], [0.32, 0.48], [-0.32, 0.76], [0.32, 0.76]]) box(piano, [0.04, 0.48, 0.04], [x, 0.24, z], 'piano');
+    slots.models.push({ holder: piano, key: 'piano', placeholders: since(piano, piano0) });
     // luz de cena sobre o piano
     const spot = new THREE.SpotLight(style.light.piano[0], style.light.piano[1], 7, 0.55, 0.6, 2);
     spot.position.set(0.6, 3.2, 1.2);
@@ -292,8 +308,10 @@ export function buildBar(style: StyleDef): BarScene {
   // ---------------- porta dos fundos ----------------
   const doorX = -2.3;
   const doorG = group(root, [doorX, 0, ZF + 0.02]);
+  const door0 = doorG.children.length;
   for (const x of [-0.55, 0.55]) box(doorG, [0.1, 2.3, 0.14], [x, 1.15, 0.05], 'woodDark');
   box(doorG, [1.2, 0.12, 0.14], [0, 2.3, 0.05], 'woodDark');
+  slots.models.push({ holder: doorG, key: 'porta', node: 'porta_moldura', placeholders: since(doorG, door0) });
   const nightMat = (mat('night') as THREE.MeshBasicMaterial).clone();
   const nightBase = nightMat.color.clone();
   const nightOpen = new THREE.Color(style.light.door[0]).multiplyScalar(0.55);
@@ -307,6 +325,7 @@ export function buildBar(style: StyleDef): BarScene {
   box(hinge, [0.7, 0.6, 0.06], [0.49, 1.6, 0.0], 'woodDark');
   box(hinge, [0.7, 0.8, 0.06], [0.49, 0.6, 0.0], 'woodDark');
   mesh(hinge, new THREE.SphereGeometry(0.035, 10, 8), 'brass', [0.88, 1.05, 0.05]);
+  slots.models.push({ holder: hinge, key: 'porta', node: 'porta_folha', placeholders: [...hinge.children] });
   const doorLight = new THREE.SpotLight(style.light.door[0], 0, 10, 0.75, 0.7, 1.5);
   doorLight.position.set(0, 2.0, 0.12);
   doorLight.target.position.set(0.4, 0, 4.5);
@@ -334,6 +353,7 @@ export function buildBar(style: StyleDef): BarScene {
     mesh(clock, cyl(0.28, 0.28, 0.06, 32), 'woodDark', [0, 0, 0]).rotation.x = Math.PI / 2;
     const face = mesh(clock, new THREE.CircleGeometry(0.24, 32), 'ivory', [0, 0, 0.035]);
     face.castShadow = false;
+    slots.models.push({ holder: clock, key: 'relogio', placeholders: [...clock.children] });
     const hour = mesh(clock, boxG(0.02, 0.13, 0.01), 'piano', [0, 0.05, 0.045]);
     const minute = mesh(clock, boxG(0.012, 0.2, 0.01), 'piano', [0, 0.08, 0.05]);
     const hp = group(clock, [0, 0, 0]);
@@ -363,6 +383,15 @@ export function buildBar(style: StyleDef): BarScene {
       for (const c of holder.children) c.visible = false;
       holder.add(model);
     };
+    for (const m of slots.models) {
+      const source = assets.models[m.key];
+      if (!source) continue;
+      const model = m.node ? source.getObjectByName(m.node)?.clone() : source.clone();
+      if (!model) continue;
+      for (const ph of m.placeholders) ph.visible = false;
+      // um nó avulso (ex.: folha da porta) já traz a posição relativa ao seu grupo
+      m.holder.add(model);
+    }
     if (slots.counter) {
       slots.counter.visible = false;
       root.add(assets.balcao.clone());

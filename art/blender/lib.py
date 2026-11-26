@@ -149,6 +149,7 @@ def box_uv(obj, tile=1.6):
     """UV em escala de mundo por projeção de caixa: 1 unidade de UV = `tile` metros.
 
     O veio da madeira corre em X (comprimento do balcão)."""
+    bpy.context.view_layer.update()
     mesh = obj.data
     if not mesh.uv_layers:
         mesh.uv_layers.new(name='UVMap')
@@ -291,3 +292,34 @@ def export(objects, path):
     except TypeError:
         bpy.ops.export_scene.gltf(**kwargs)
     print('EXPORTADO', path)
+
+
+def grid(name, w, h, nx, ny, displace=None):
+    """Malha plana w x h (eixos X e Z do Blender, de frente para -Y) com deslocamento opcional em Y."""
+    bm = bmesh.new()
+    uv_layer = bm.loops.layers.uv.new('UVMap')
+    verts = [[bm.verts.new((-w / 2 + w * i / nx, (displace(i / nx, j / ny) if displace else 0.0), h * j / ny))
+              for i in range(nx + 1)] for j in range(ny + 1)]
+    for j in range(ny):
+        for i in range(nx):
+            f = bm.faces.new((verts[j][i], verts[j][i + 1], verts[j + 1][i + 1], verts[j + 1][i]))
+            for loop, (u, v) in zip(f.loops, ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))):
+                loop[uv_layer].uv = (u / nx, v / ny)
+    bm.normal_update()
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+    return smooth(bpy.data.objects.new(name, mesh))
+
+
+def join(objects, name):
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in objects:
+        if o.name not in bpy.context.scene.objects:
+            link(o)
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = objects[0]
+    bpy.ops.object.join()
+    out = bpy.context.active_object
+    out.name = out.data.name = name
+    return out

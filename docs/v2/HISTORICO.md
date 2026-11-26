@@ -54,3 +54,9 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 **Felipe:** "quero que você já remova do localhost atual essa visão de teste de seleção e textos, quero apenas a ambientalização com o piano"
 → `estilos.html` mostra só o bar (Âmbar Noturno, vista do bartender); um clique liga o piano. Controles de teste só com `?debug`.
 → Primeiros assets por código ([art/README.md](../../art/README.md)): luminária (cúpula âmbar, lâmpada de filamento, latão), balcão (tampo de nogueira, apoio de couro, almofadas, trilho de latão, tapete), copos (highball, rocks, coupe, caneca de cobre) e 15 garrafas com rótulos fictícios. Gerados no Blender do Windows, em `public/models/`. Capturas em `estilos/assets_balcao_*_v1.jpg`. Ainda provisórios: pessoas, estante do fundo, salão.
+
+**Felipe (26/11/2026), com prints:** "a estante de baixo ali tá bugada, quando a visão mexe, ela fica stuttering e travando. melhore isso. fora isso tá bom. além disso quero que você desça mais a lâmpada central pra aparecer melhor mesmo olhando reto [...] sim agora quero que você melhore a estante e salão e tudo mais de objeto e só depois fazemos as pessoas"
+→ Prints salvos em `estilos/referencia_felipe_estante_bug_v1.webp` e `estilos/referencia_felipe_luminaria_v1.webp`.
+→ Tremor da estante: era z-fighting (prateleira de baixo e tampo do armário na mesma altura). A estante virou um modelo único sem superfícies sobrepostas; a primeira fileira de garrafas pousa direto no tampo.
+→ Luminária central desceu de 2,45 m para 2,05 m (cabo de 2 m atravessa o teto em qualquer altura).
+→ Novo `art/blender/build_salao.py`: sala, estante, banquetas, mesas com abajur, cadeiras de madeira curvada, cabines de veludo capitonê com arandela, piano de cauda com banco, porta, janelas com cortinas e relógio com mostrador romano. Capturas em `estilos/assets_salao_*_v1.jpg`. Pessoas continuam provisórias (próximo passo).

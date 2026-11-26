@@ -65,9 +65,9 @@ def done(obj, material=None, tile=None):
 def build_pendant():
     parts = []
     # origem = topo do soquete; o cabo sobe 1 m até a canopla
-    parts.append(done(lib.tube_along('lum_cabo', [(0, 0, 0.06), (0, 0, 1.0)], 0.0035), fabric))
-    canopy = lib.lathe('lum_canopla', [(0.0, 1.0), (0.055, 1.0), (0.058, 0.995), (0.05, 0.975), (0.012, 0.965),
-                                       (0.006, 0.96)], 40)
+    parts.append(done(lib.tube_along('lum_cabo', [(0, 0, 0.06), (0, 0, 2.0)], 0.0035), fabric))
+    canopy = lib.lathe('lum_canopla', [(0.0, 2.0), (0.055, 2.0), (0.058, 1.995), (0.05, 1.975), (0.012, 1.965),
+                                       (0.006, 1.96)], 40)
     parts.append(done(canopy, brass))
     socket = lib.lathe('lum_soquete', [(0.0, 0.07), (0.012, 0.07), (0.016, 0.06), (0.016, 0.052), (0.019, 0.05),
                                        (0.019, 0.044), (0.016, 0.042), (0.016, 0.012), (0.021, 0.008),

@@ -16,7 +16,7 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 → Registrado em [visao.md](visao.md), seção 3.
 
 **Felipe:** "me diga o que mais está e não está documentado sobre toda essa experiência de a noite ficando estranha"
-→ Levantamento em [visao.md](visao.md), seção 4.
+→ Levantamento em [visao.md](visao.md), seção 5.
 
 **Felipe:** "cria a nova branch sim como redesign visual"
 → Branch `feat/redesign-visual`.

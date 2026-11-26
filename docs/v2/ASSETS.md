@@ -27,6 +27,7 @@ Convenção de eixos: jogo em Y para cima, jogador olhando para -Z. Cada modelo 
 |---|---|---|
 | `copos.glb` | `copo_highball`, `copo_rocks`, `copo_coupe`, `copo_caneca` | `build_balcao.py` |
 | `garrafas.glb` | `garrafa_<id>` para as 15 bebidas engarrafadas (ids do domínio: `rum`, `cachaca`, `whisky`, `tequila`, `gin`, `vodka`, `orange_liqueur`, `campari`, `sweet_vermouth`, `dry_vermouth`, `cola`, `soda_water`, `ginger_beer`, `lemon_juice`, `sugar_syrup`) com rótulos fictícios | `build_balcao.py` |
+| `utensilios.glb` | Objetos de jogo do posto do bartender (nós de topo, origem = origem do objeto em `src/scene/station.ts`): `coqueteleira`, `coqueteleira_tampa`, `colher`, `macerador`, `pote` + `pote_limao_conteudo` / `pote_hortela_conteudo` / `pote_acucar_conteudo`, `porcao_limao`, `porcao_gelo` (material `vidro_gelo`), `porcao_hortela`, `cuba_gelo`, `pia`, `bandeja`, `suporte_copos`, `atril`, `livro` (páginas em material `papel`), `gaveta`, `alicate`, `pinca`, `faca`, `barata` (filhos `barata_perna_0..5`), `aranha` (filhos `aranha_perna_0..7`), `lesma`, `gosma` (material `gosma`, translúcido), `mao_cliente` (porcelana do estilo Máscara). 1,1 MB, < 4,1 mil triângulos por objeto. Folha de conferência: [estilos/utensilios_v2.png](estilos/utensilios_v2.png) | `build_utensilios.py` |
 
 ## `public/models/pessoas/` (estilo Máscara, aprovado)
 

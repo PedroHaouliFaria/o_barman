@@ -36,7 +36,7 @@ try {
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(url + '/?xr-emulate&leve');
+  await page.goto(url + '/?xr-emulate&leve&semui');
   await page.waitForFunction(() => !document.querySelector('#start').disabled, {}, { timeout: 60000 });
   await page.click('#start');
   await page.click('#enter-vr');

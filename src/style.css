@@ -629,3 +629,17 @@ dialog.card dd {
     justify-content: flex-start;
   }
 }
+
+/* Em VR (e no simulador do Quest) só a cena aparece; o painel do simulador fica por cima. */
+body.in-xr .title-card,
+body.in-xr .toast,
+body.in-xr .vessel-note,
+body.in-xr .vignette,
+body.in-xr .hud .hud-actions button:not(.vr) {
+  display: none !important;
+}
+
+/* Enquanto os modelos carregam, a tela de abertura cobre tudo (nada do bar pela metade). */
+body.loading .title-card {
+  background: var(--night);
+}

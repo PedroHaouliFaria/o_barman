@@ -126,3 +126,22 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 
 **Felipe (26/11/2026):** "nao quero que nenhuma branch, nem commite, nem PR NEM NADA, tenha o nome claude. nem como co author nem nada. tudo no meu nome e no conventional commits. feat/redesign e feeat/ adicinoar mecanicas. faca isso e commite e abra o PR"
 → Histórico reescrito sem coautoria nem menções ao assistente, mensagens em conventional commits, autor Felipe. Branches: `feat/redesign` (migração para a v2, laboratório de arte e pessoas Máscara) e `feat/adicionar-mecanicas` (mecânicas no bar novo, UI nova, objetos de jogo), uma sobre a outra.
+
+**Felipe (26/11/2026):** "pode aplicar TUDO isso [otimizações] e cade o piano, parei de ouvir ele. e que oque voce faca muiot bem feito isso do piano mas garantindo que nao fique feio, qual voce acha que tem risco de deixar o jogo pior e feio?"
+→ Piano novo no jogo (síntese de cordas, sala, música que piora a cada ato) e murmúrio das mesas. Geometria fixa juntada por material (visual idêntico).
+
+**Felipe (26/11/2026):** "entenda que a ambientalizacao e a atmosfere e o MAIS IMportante pra imersao. e isso vai vir justamente da ilumincao, por isso nao podemos economizar nisso e no audio tambem. sao o mais importante. vemdo o preview vi que ja ta HORRIVEL essa luz branca e a lampada ali. eu quero SIM aquela luz climatica bonita que tava no bar todo"
+→ Regra: luz e áudio não entram em economia. Volta a iluminação completa do laboratório (todas as luzes, sombras, vidro âmbar, bloom, vinheta e grão no computador); sai a luz de trabalho branca e as "poças de luz" pintadas.
+→ Registro completo em [otimizacao_v1.md](otimizacao_v1.md) (feito, recusado por ficar feio, adiado).
+
+**Felipe (26/11/2026, vendo a captura do VR):** "se essa for a versao vr atual ta MUITO FEIO . melhore e deixe igual o do desktop" / "to dizendo da LUZ, ela e o segredo de parecer bom. uma ilumincao boa, deixe mais imersivo e melhor"
+→ VR com a mesma atmosfera do computador: todas as luzes e sombras, halos e névoa âmbar nas luzes, cone de luz sob as luminárias, cúpula sem estourar em branco; mãos de porcelana. Capturas em `estilos/otimizacao_v1/`.
+
+**Felipe (26/11/2026, comparando VR e computador):** "ta meio ruim isso do contorno escuro em volta da luz embaixo ali. alem disso NAO ta legal isso de vermos a lampada dentro. veja como esta a iluminacao no compuador e diexe exatamente igual no VR, mas otimizando mais. e se nao der pra otimizar TUDO BEM. eu qeur oque a iluminacao esteja boa igual. essa ambientalizacao e necessario. [...] como estava 100vezes mais bonito no PC. e literalmente outro jogo. quero que voce volte e va deixando uigual no PC"
+→ Removidos os halos/névoa/cones falsos; pós-processamento próprio no VR com a mesma receita do computador (bloom, vinheta, grão, ACES), olho por olho. Capturas `estilos/otimizacao_v1/vr_luz_v3.png` e `jogo_bartender_v2.png`.
+
+**Felipe (26/11/2026, com capturas):** "aqui um bug que eu percebi olha os personagems [...] antes de carregar tudo, voce mostra uma versao antiga nessa tela. EU NAO QUERO ISSO. carregue de verdade e so mostre a tela quando tudo relamente carregar [...] olhe a comparacao do PC e do VR O do PC ta infinitamnete mais bonito. sem esses pixelados exagerados e com um ponto preto muito melhor [...] EU QUERO que fique igual no PC esta muito lindo"
+→ Cliente de blocos removido (aparecia junto do Máscara). O bar só aparece com todos os modelos carregados (botão "Preparando o bar…"). VR: grão aplicado no espaço de exibição (pretos voltam a ser pretos), vinheta certa em mono e estéreo, simulador na resolução real da tela, Quest em 1,25x da resolução recomendada, sem foveação e com sombras de 1024 px. Captura: `estilos/otimizacao_v1/vr_luz_v4.png`.
+
+**Felipe (26/11/2026):** "ta muito bom assim! o piano ta no vr, ta tudo normal? s sim pode commitar e subir pra main, mas commitando na nossa branch ne"
+→ Piano começa ao entrar no VR (o clique libera o som). Ensaios: 37 testes de regras, 9 pedidos pelo computador (objetos 3D e Caderno) e 9 pedidos no Quest simulado só com gestos, todos aprovados. Commit na `feat/adicionar-mecanicas` e merge do PR na `main`.

@@ -10,6 +10,8 @@ import { bindControls } from '../interaction/controls';
 import { box, cone, customer, cylinder, group, rotate, room, sphere, torus, type Vec3 } from './blockout';
 import { bookPage, medallion, paperLabel, plaque, subtitle, ticket, type Panel } from '../ui/world-ui';
 import { buildEvents, specimen } from './environment';
+import { createPianist } from '../audio/piano';
+import { createMurmurs } from '../audio/room';
 import { tipJar } from './tip-jar';
 import { toolDrawer } from './tool-drawer';
 import type { Action, Item, Result } from './types';
@@ -65,10 +67,21 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   const art = mountArtBar(root, scene, (x, z, y) =>
     Math.abs(x) < 0.55 && bottleShelves.some((row) => Math.abs(row.top - y) < 0.1 && Math.abs(row.z - z) < 0.2),
   );
-  const illuminate = (act: number) => art.setAct(act);
+  // Som do salão: o pianista e o murmúrio das mesas, posicionais (o ouvido é a câmera/cabeça).
+  const listener = new THREE.AudioListener();
+  ctx.camera().add(listener);
+  const pianist = createPianist(listener, art.bar.pianoAnchor, (hand) => art.bar.strike(hand));
+  const murmurs = createMurmurs(listener, art.bar.murmurAnchors);
+  let soundOn = true;
+  const illuminate = (act: number) => {
+    art.setAct(act);
+    pianist.setAct(act);
+    // O salão vai se calando enquanto a noite piora.
+    murmurs.setLevel(soundOn ? ({ 1: 1, 2: 0.65, 3: 0.3, 4: 0.12 } as Record<number, number>)[act] ?? 0.12 : 0);
+  };
   // ?leve: perfil do Quest também no computador (testes automáticos e máquinas fracas).
   const lightMode = typeof location !== 'undefined' && new URLSearchParams(location.search).has('leve');
-  let lastVr: boolean | null = null;
+  let lastMode: string | null = null;
   const showTips = tipJar(root, (parent, at, w, h) => keepPanel(paperLabel(parent, at, w, h, [0, 0, 0], { title: 'Gorjetas' })), ORDERS.length * 10);
   const person = target('customer', 'Cliente', [0, 0, -1.53]);
   // A mão estendida fica sobre o balcão, mais perto do bartender (alcance em VR).
@@ -79,8 +92,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   function drawCustomer(index: number, visible: boolean) {
     drawBlocks(index, visible);
     person.visible = true;
-    const masked = cast.show(index, visible);
-    for (const part of blockParts) part.visible = visible && !masked;
+    cast.show(index, visible);
+    // O cliente de blocos do protótipo nunca aparece: só o modelo Máscara.
+    for (const part of blockParts) part.visible = false;
     // Quem está sentado à mesa levanta para vir ao balcão na sua vez.
     const atTable = [1, 2, 5];
     art.tablePeople.forEach((p, i) => (p.visible = !(visible && index === atTable[i])));
@@ -367,7 +381,11 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   }
   const events = buildEvents({ root, target, onHint: feedback, onCue: callbacks.onEventCue });
   let dressed = false;
-  Promise.all([loadUtensils(), art.ready, cast.loading]).then(([get]) => {
+  // O bar só aparece com todos os modelos certos carregados (nada do protótipo na tela).
+  root.visible = false;
+  let markReady: () => void = () => {};
+  const whenReady = new Promise<void>((resolve) => (markReady = resolve));
+  Promise.all([loadUtensils(), art.ready, cast.loading, art.seatedLoaded, art.pianistLoaded]).then(([get]) => {
     dressed = true;
     dressUtensils(get, {
       items,
@@ -379,6 +397,10 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       actors: events.actors,
       keep: new Set([shakerSurface, gauge]),
     });
+    controls.dressHands(get('mao_cliente'));
+    render(session.state);
+    root.visible = true;
+    markReady();
   });
   const controls = bindControls({
     scene,
@@ -409,6 +431,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       controls.releaseAll();
       if (newSession) controls.restoreThrown();
     }
+    if (changed && state.phase === 'finished') pianist.finale();
+    if (changed && state.phase === 'playing') pianist.resume();
+    if (pausedChange) pianist.setPaused(state.paused);
     if (changed) {
       controls.clearGlass();
       drawCustomer(state.orderIndex, state.phase === 'playing');
@@ -493,11 +518,32 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   return {
     render,
     recenter,
+    /** Liga a música (precisa de um gesto do jogador antes, por regra dos navegadores). */
+    startMusic() {
+      if (listener.context.state === 'suspended') listener.context.resume().catch(() => {});
+      pianist.start();
+      murmurs.start();
+      illuminate(session.order?.act ?? 1);
+    },
+    music: () => pianist.stats(),
+    /** Diagnóstico: luzes do bar e se estão ligadas. */
+    lightReport: () => {
+      const out: string[] = [];
+      art.bar.root.traverse((o) => {
+        if ((o as THREE.Light).isLight) out.push(o.type + ':' + o.visible + ':' + (o as THREE.Light).castShadow);
+      });
+      return out;
+    },
+    setSound(on: boolean) {
+      soundOn = on;
+      pianist.setEnabled(on);
+      illuminate(session.order?.act ?? 1);
+    },
     frame(time: number, dt: number, xrFrame?: XRFrame) {
-      const vr = gl.xr.isPresenting || lightMode;
-      if (vr !== lastVr) {
-        lastVr = vr;
-        art.setQuality(vr ? 'vr' : 'alta', gl);
+      const mode = lightMode ? 'leve' : gl.xr.isPresenting ? 'vr' : 'alta';
+      if (mode !== lastMode) {
+        lastMode = mode;
+        art.setQuality(mode, gl);
       }
       art.update(time / 1000, dt / 1000);
       controls.frame(time, dt, xrFrame);
@@ -513,6 +559,8 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       const r = gl.domElement.getBoundingClientRect();
       return { x: r.left + ((p.x + 1) / 2) * r.width, y: r.top + ((1 - p.y) / 2) * r.height };
     },
+    /** Resolve quando todos os modelos estão carregados e a estação está vestida. */
+    whenReady,
     /** true quando os modelos do Blender já vestiram a estação. Usado pelos testes. */
     get ready() {
       return dressed;
@@ -532,6 +580,20 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     pointOf(id: string, y: number) {
       const p = root.worldToLocal(items.get(id)!.obj.localToWorld(new THREE.Vector3(0, y, 0)));
       return { x: p.x, y: p.y, z: p.z };
+    },
+    /** Diagnóstico: malhas visíveis por grupo de topo e luzes visíveis por tipo. */
+    meshReport() {
+      const out: Record<string, number> = {};
+      const lights: string[] = [];
+      scene.traverseVisible((o) => {
+        if ((o as THREE.Light).isLight) lights.push(o.type + (o.parent?.name ? '@' + o.parent.name : ''));
+        if (!(o as THREE.Mesh).isMesh) return;
+        let top: THREE.Object3D = o;
+        while (top.parent && top.parent !== root && top.parent !== art.bar.root && top.parent !== scene) top = top.parent;
+        const key = (top.parent === art.bar.root ? 'bar/' : top.parent === root ? 'estacao/' : '') + (top.name || top.type);
+        out[key] = (out[key] ?? 0) + 1;
+      });
+      return { meshes: Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 25), lights };
     },
     /** Custo do último quadro (chamadas de desenho, triângulos, luzes ativas). Diagnóstico de desempenho. */
     stats() {
@@ -563,6 +625,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       camera.updateMatrixWorld(true);
     },
     destroy() {
+      pianist.dispose();
+      murmurs.dispose();
+      listener.removeFromParent();
       controls.destroy();
       contents.destroy();
       for (const p of panels) p.dispose();

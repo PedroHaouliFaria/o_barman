@@ -210,6 +210,7 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
       const f = figure(style, { seated: true, outfit: p.outfit, hat: p.hat });
       add(t, f.root, [Math.sin(a) * 0.68, 0, Math.cos(a) * 0.68], a);
       f.root.userData.look = p.look;
+      f.root.userData.dynamic = true;
       tableFigures.push(f.root);
       animators.push((time, dt) => f.talk(time, dt));
       const drink = group(t, [Math.sin(a) * 0.25, 0.772, Math.cos(a) * 0.25]);
@@ -328,6 +329,7 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
     piano.add(spot, spot.target);
   }
   const pianist = figure(style, { seated: true, outfit: 0, pianist: true });
+  pianist.root.userData.dynamic = true;
   add(piano, pianist.root, [0, 0.05, 0.6], 0); // de costas para o bar
   animators.push((t, dt) => pianist.play(t, dt));
   const pianoAnchor = group(piano, [0, 1.0, -0.4]);
@@ -347,7 +349,9 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
   const outsider = figure(style, { seated: false, outfit: 4, hat: true, silhouette: true });
   add(doorG, outsider.root, [0.05, 0, 0.16], Math.PI);
   outsider.root.visible = false;
+  outsider.root.userData.dynamic = true;
   const hinge = group(doorG, [-0.49, 0, 0.08]);
+  hinge.userData.dynamic = true; // a porta abre e fecha
   box(hinge, [0.98, 2.16, 0.05], [0.49, 1.08, 0], 'wood');
   box(hinge, [0.7, 0.6, 0.06], [0.49, 1.6, 0.0], 'woodDark');
   box(hinge, [0.7, 0.8, 0.06], [0.49, 0.6, 0.0], 'woodDark');
@@ -385,6 +389,7 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
     const minute = mesh(clock, boxG(0.012, 0.2, 0.01), 'piano', [0, 0.08, 0.05]);
     const hp = group(clock, [0, 0, 0]);
     const mp = group(clock, [0, 0, 0]);
+    hp.userData.dynamic = mp.userData.dynamic = true;
     hp.add(hour);
     mp.add(minute);
     animators.push((t) => {

@@ -1,6 +1,10 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { createXRStore, XR } from '@react-three/xr';
+import { Bloom, EffectComposer, Noise, ToneMapping, Vignette } from '@react-three/postprocessing';
+import { createXRStore, useXR, XR } from '@react-three/xr';
+import { ToneMappingMode } from 'postprocessing';
 import { useEffect, useRef } from 'react';
+import { STYLES } from '../lab/styles';
+import { createXRPost } from './xr-post';
 import * as THREE from 'three';
 import { mountStation, type Station, type StationCallbacks } from '../scene/station';
 
@@ -70,6 +74,45 @@ function StationMount({ game, callbacks, onReady }: Props) {
   return null;
 }
 
+/**
+ * A câmera do Âmbar Noturno, igual ao laboratório: bloom nas lâmpadas e nos filamentos,
+ * vinheta, grão de filme e tons ACES.
+ * - computador: EffectComposer (@react-three/postprocessing), como no laboratório;
+ * - VR: a mesma receita refeita olho por olho (src/app/xr-post.ts);
+ * - ?leve (ensaios sem GPU): só ACES, sem pós-processamento.
+ */
+function Atmosphere() {
+  const { gl, scene, camera } = useThree();
+  const inXR = useXR((s) => Boolean(s.session));
+  const light = new URLSearchParams(location.search).has('leve');
+  const xrPost = useRef<ReturnType<typeof createXRPost> | null>(null);
+  useEffect(() => {
+    gl.toneMapping = light ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+    gl.toneMappingExposure = 1;
+    // Imagem cheia em toda a visão (sem foveação): nitidez antes de desempenho.
+    if (inXR) gl.xr.setFoveation(0);
+  }, [gl, inXR, light]);
+  useEffect(() => {
+    xrPost.current = createXRPost(gl);
+    return () => xrPost.current?.dispose();
+  }, [gl]);
+  // Com prioridade 1 o R3F deixa de desenhar sozinho: quem desenha é o pós-processamento.
+  useFrame(() => {
+    if (light) gl.render(scene, camera);
+    else if (inXR) xrPost.current?.render(scene, camera);
+  }, 1);
+  if (inXR || light) return null;
+  const post = STYLES.ambar.post;
+  return (
+    <EffectComposer multisampling={4}>
+      <Bloom intensity={post.bloom} luminanceThreshold={0.75} luminanceSmoothing={0.2} mipmapBlur />
+      <Vignette darkness={post.vignette} offset={0.25} />
+      <Noise opacity={post.noise} />
+      <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+    </EffectComposer>
+  );
+}
+
 interface Props {
   game: any;
   callbacks: StationCallbacks;
@@ -80,17 +123,21 @@ export function App(props: Props) {
   return (
     <Canvas
       shadows="soft"
-      gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      dpr={[1, 2]}
+      gl={{ antialias: true, alpha: false }}
       camera={{ position: [0, 1.6, 0], fov: 80, near: 0.005, far: 100 }}
       onCreated={({ gl }) => {
         gl.setClearColor('#0b0807');
         // ?leve (testes no simulador sem GPU): menos pixels por olho.
-        if (new URLSearchParams(location.search).has('leve')) gl.xr.setFramebufferScaleFactor(0.2);
+        // Resolução por olho acima da recomendada pelo Quest (1,25x): menos serrilhado e texto
+        // mais nítido. ?leve (ensaios no simulador sem GPU) usa o mínimo.
+        gl.xr.setFramebufferScaleFactor(new URLSearchParams(location.search).has('leve') ? 0.2 : 1.25);
       }}
     >
       <XR store={xrStore}>
         <DesktopLook />
         <StationMount {...props} />
+        <Atmosphere />
       </XR>
     </Canvas>
   );

@@ -27,6 +27,8 @@ const VIEWS = {
   aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
   executivo_lado: { name: 'Executivo de lado', pos: [0.75, 1.55, -1.05], look: [0, 1.4, -1.6] },
   aposentado_lado: { name: 'Aposentado de lado', pos: [-0.75, 1.4, -4.4], look: [-1.32, 1.25, -4.7] },
+  festeira: { name: 'Festeira de perto', pos: [0.75, 1.62, -0.75], look: [0.95, 1.45, -1.62] },
+  festeira_corpo: { name: 'Festeira inteira', pos: [0.55, 1.45, -0.35], look: [0.95, 1.05, -1.62] },
   detetive: { name: 'Detetive de perto', pos: [-0.85, 1.6, -0.72], look: [-0.85, 1.5, -1.62] },
   executivo: { name: 'Executivo de perto', pos: [0, 1.55, -0.75], look: [0, 1.45, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
@@ -133,7 +135,27 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         bar.applyAssets(assets);
         // ?pessoas: os três estilos do Executivo lado a lado no balcão
         const which = new URLSearchParams(location.search).get('pessoas');
-        if (which === 'normais') {
+        if (which === 'ato1') {
+          // Ato I completo: Executivo e Festeira no balcão; Turista e Aposentado à mesa
+          bar.frontCustomer.visible = false;
+          loadModels(['mascara_executivo', 'mascara_festeira', 'mascara_turista', 'mascara_aposentado']).then(
+            ([exec, festeira, turista, aposentado]) => {
+              if (!alive) return;
+              exec.position.set(0, 0, -1.6);
+              exec.rotation.y = Math.PI;
+              festeira.position.set(0.95, 0, -1.62);
+              festeira.rotation.y = Math.PI - 0.35;
+              bar.root.add(exec, festeira);
+              bar.tableFigures.slice(0, 2).forEach((f, i) => {
+                const person = [turista, aposentado][i];
+                person.position.copy(f.position);
+                person.rotation.copy(f.rotation);
+                f.visible = false;
+                f.parent!.add(person);
+              });
+            },
+          );
+        } else if (which === 'normais') {
           // estilo Máscara: normais pintados (balcão e mesa) + um estranho de olhos-buraco para contraste
           bar.frontCustomer.visible = false;
           loadModels(['mascara_executivo', 'mascara_turista', 'mascara_aposentado', 'pessoa_mascara', 'mascara_detetive']).then(

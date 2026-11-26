@@ -83,3 +83,6 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 → Dois rostos: a **Detetive** (cliente 7). De frente desconfiada; na nuca um segundo rosto (olhos pretos, sorriso fino). Sobretudo, chapéu, chanel deixando a nuca livre. No laboratório ela vira de costas a cada 16 s. Imagens: `estilos/mascara_detetive_*_v1.jpg`.
 → Escultura agora respeita frente/costas (antes o relevo do rosto vazava para a nuca); costura da textura do rosto movida para a lateral.
 → Ficha dos 15 no estilo Máscara para aprofundar: [personagens_mascara_v1.md](personagens_mascara_v1.md).
+
+**Felipe (26/11/2026):** "pode gerar TODOS do ato 1 sim"
+→ Ato I completo no estilo Máscara (`build_mascaras.py`): Executivo (agora com maleta de couro), Turista, Aposentado (agora com colete e bengala) e a nova **Festeira** (vestido de franjas anos 20, faixa com pena e joia, colar longo de pérolas, luvas pretas longas, piteira com brasa, sombra nos olhos e pinta). Cena: `estilos.html?pessoas=ato1`. Imagens: `estilos/ato1_*_v1.jpg`.

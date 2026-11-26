@@ -27,16 +27,21 @@ PEOPLE = {
     # cliente 1: cansado, gravata frouxa, de pé no balcão
     'executivo': dict(body='terno', seated=False, suit=(0.2, 0.2, 0.22), stripe=(0.55, 0.52, 0.48),
                       shirt=(0.85, 0.82, 0.74), tie=(0.45, 0.06, 0.07), hair='la', hair_color=(0.07, 0.06, 0.06),
-                      iris=(0.3, 0.2, 0.12), mood='cansado', nose=1.0, lips=(0.55, 0.22, 0.2), blush=0.25),
+                      iris=(0.3, 0.2, 0.12), mood='cansado', nose=1.0, lips=(0.55, 0.22, 0.2), blush=0.25,
+                      briefcase=True),
     # cliente 2: jovem, simpática, sorridente; vestido, coque, câmera fotográfica
     'turista': dict(body='vestido', seated=True, dress=(0.78, 0.55, 0.22), dress2=(0.55, 0.3, 0.12),
                     shirt=(0.95, 0.92, 0.85), hair='coque', hair_color=(0.36, 0.18, 0.08), iris=(0.2, 0.38, 0.5),
                     mood='sorriso', nose=0.7, lips=(0.78, 0.16, 0.2), blush=0.6, camera=True),
+    # cliente 4: elegante e alegre, começando a noite; vestido de franjas anos 20, pena, pérolas, piteira
+    'festeira': dict(body='melindrosa', seated=False, dress=(0.78, 0.72, 0.6), shirt=(0.94, 0.92, 0.88),
+                     hair='chanel', hair_color=(0.04, 0.03, 0.03), iris=(0.3, 0.2, 0.12), mood='festa', nose=0.65,
+                     lips=(0.45, 0.04, 0.08), blush=0.45, shadow=(0.32, 0.18, 0.36), pinta=True),
     # cliente 3: senhor educado, grisalho, bigode e óculos; paletó de tweed
     'aposentado': dict(body='terno', seated=True, suit=(0.42, 0.34, 0.24), stripe=(0.6, 0.5, 0.36),
                        shirt=(0.88, 0.86, 0.8), tie=(0.15, 0.22, 0.32), hair='calvo', hair_color=(0.52, 0.5, 0.48),
                        iris=(0.35, 0.42, 0.45), mood='sereno', nose=1.25, lips=(0.6, 0.3, 0.28), blush=0.35,
-                       mustache=True, glasses=True),
+                       mustache=True, glasses=True, vest=(0.32, 0.18, 0.12), cane=True),
     # cliente 7: reservada, observadora; ao virar de costas revela um segundo rosto na nuca
     'detetive': dict(body='sobretudo', seated=False, coat=(0.6, 0.48, 0.32), coat2=(0.34, 0.25, 0.16),
                      shirt=(0.8, 0.78, 0.72), hair='chanel', hair_color=(0.1, 0.07, 0.06), iris=(0.25, 0.42, 0.3),
@@ -50,6 +55,7 @@ MOODS = {
     'cansado': dict(brow=0.06, mouth=-0.06, lid=0.42, happy=0.0),
     'sorriso': dict(brow=-0.03, mouth=0.14, lid=0.1, happy=0.6),
     'sereno': dict(brow=0.02, mouth=0.04, lid=0.3, happy=0.25),
+    'festa': dict(brow=-0.05, mouth=0.16, lid=0.28, happy=0.45),
     'desconfiada': dict(brow=-0.02, mouth=-0.01, lid=0.38, happy=0.0),
     # o segundo rosto: olhos pretos pintados e sorriso largo demais
     'segundo': dict(brow=-0.05, mouth=0.24, lid=0.0, happy=0.0),
@@ -104,6 +110,14 @@ def face_color(x, z, p, mood, eyes, ivory, iris, lips, brow_col):
     if eyes == 'buraco':
         hole = smoothstep(0.16, 0.115, min(math.hypot((x - sx * 0.33) / 1.25, z - 0.1) for sx in (-1, 1)))
         return [k * (1 - hole) for k in c]
+    if p.get('shadow'):  # sombra colorida de festa sobre as pálpebras
+        sh_col = lin(p['shadow'])
+        for sx in (-1, 1):
+            k = 0.85 * gauss(math.hypot((x - sx * 0.33) / 1.3, z - 0.15), 0.075)
+            c = [c[i] * (1 - k) + sh_col[i] * k for i in range(3)]
+    if p.get('pinta'):  # pinta acima do lábio
+        k = smoothstep(0.022, 0.014, math.hypot(x - 0.2, z + 0.47))
+        c = [ci * (1 - k) + 0.03 * k for ci in c]
     for sx in (-1, 1):
         if mood['lid'] > 0.2:  # pálpebra caída: sombra suave acima do olho
             sh = 0.25 * mood['lid'] * gauss(math.hypot((x - sx * 0.33) / 1.4, z - 0.17), 0.06)
@@ -363,6 +377,110 @@ def necktie(mat, dz, loose=False):
     return out
 
 
+def accessories(parts, key, p, wrists, head_c, dz):
+    if p.get('briefcase'):  # maleta de couro na mão esquerda
+        leather = P(f'{key}_couro', lin((0.22, 0.11, 0.05)), roughness=0.45)
+        brass = P('fecho', lin((0.75, 0.55, 0.25)), roughness=0.3, metallic=1.0)
+        el, wr = wrists[-1]
+        hx, hy, hz = wr.x - 0.005, wr.y + 0.03, wr.z - 0.07
+        parts.append(prism('maleta', hz - 0.3, hz - 0.03, (0.05, 0.2), (0.045, 0.19), leather, center0=(hx, hy),
+                           center1=(hx, hy), bevel=0.012))
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('alca_maleta', [(hx, hy - 0.06, hz - 0.03),
+                                                                            (hx, hy - 0.05, hz + 0.015),
+                                                                            (hx, hy + 0.05, hz + 0.015),
+                                                                            (hx, hy + 0.06, hz - 0.03)], 0.008, 8), leather)))
+        for dy in (-0.12, 0.12):
+            parts.append(prism('fecho', hz - 0.07, hz - 0.04, (0.052, 0.012), (0.052, 0.012), brass,
+                               center0=(hx, hy + dy), bevel=0.002))
+    if p.get('vest'):  # colete de lã entre as lapelas
+        vest = P(f'{key}_colete', lin(p['vest']), roughness=0.8)
+        parts.append(prism('colete', 0.8 + dz, 1.16 + dz, (0.075, 0.006), (0.035, 0.006), vest, center0=(0, 0.147),
+                           center1=(0, 0.141), bevel=0.0))
+        for i in range(3):
+            parts.append(lathe_at('botao_colete', [(0, 0), (0.008, 0), (0.008, 0.004), (0, 0.006)],
+                                  (0.0, 0.152, 0.86 + i * 0.08 + dz), P('botao_osso', lin((0.75, 0.68, 0.55))), 10,
+                                  rot=(-math.pi / 2, 0, 0)))
+    if p.get('cane'):  # bengala apoiada ao lado da cadeira
+        wood = P('bengala', lin((0.12, 0.06, 0.03)), roughness=0.3)
+        x0 = 0.32
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('bengala', [(x0, 0.25, 0.0), (x0, 0.32, 0.82),
+                                                                         (x0, 0.36, 0.88), (x0, 0.42, 0.86),
+                                                                         (x0, 0.43, 0.82)], 0.011, 10), wood)))
+    if p['body'] == 'melindrosa':
+        pearl = P('perola', lin((0.92, 0.9, 0.86)), roughness=0.15)
+        # colar longo de pérolas em laço até a cintura
+        for i in range(70):
+            t = i / 70 * 2 * math.pi
+            x = 0.12 * math.sin(t)
+            z = 1.2 + dz - 0.38 * (1 - math.cos(t)) / 2
+            y = 0.125 + 0.03 * (1 - math.cos(t)) / 2
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=6, radius=0.009, location=(x, y, z))
+            pr = bpy.context.active_object
+            lib.assign(pr, pearl)
+            parts.append(pr)
+        # faixa na cabeça com joia e pena
+        band = P('faixa_cabeca', lin((0.05, 0.04, 0.04)), roughness=0.3)
+        gem = P('joia', lin((0.15, 0.35, 0.3)), roughness=0.05, metallic=0.3)
+        parts.append(lathe_at('faixa', [(0.162, 0.0), (0.166, 0.0), (0.166, 0.028), (0.162, 0.028)],
+                              head_c + Vector((0, 0, 0.09)), band, 64, rot=(math.radians(-12), 0, 0),
+                              scale=(1.0, 1.06, 1.0)))
+        jewel_c = head_c + Vector((0.11, 0.115, 0.115))
+        parts.append(sphere('joia', jewel_c, (0.018, 0.012, 0.022), gem, 16, 12))
+        feather = P('pena', lin((0.1, 0.25, 0.2)), roughness=0.6)
+        quill = [jewel_c + Vector((0.01 * k, -0.01 * k, 0.05 * k - 0.004 * k * k)) for k in range(6)]
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('pena_haste', [tuple(q) for q in quill], 0.002, 6), feather)))
+        bm = bmesh.new()
+        for i in range(1, 30):  # barbas da pena
+            q = quill[0].lerp(quill[-1], i / 30)
+            for side in (-1, 1):
+                L = 0.035 * math.sin(i / 30 * math.pi)
+                a = bm.verts.new(q)
+                b = bm.verts.new(q + Vector((side * L, -0.004, 0.012)))
+                c = bm.verts.new(q + Vector((side * L * 0.9, -0.004, 0.018)))
+                bm.faces.new((a, b, c))
+        me = bpy.data.meshes.new('pena')
+        bm.to_mesh(me)
+        bm.free()
+        fo = bpy.data.objects.new('pena', me)
+        fo.modifiers.new('esp', 'SOLIDIFY').thickness = 0.001
+        lib.assign(fo, feather)
+        parts.append(lib.to_mesh(lib.link(fo)))
+        # piteira na mão direita
+        el, wr = wrists[1]
+        d = (wr - el).normalized()
+        tip = wr + d * 0.07
+        holder = [tip, tip + Vector((-0.05, 0.12, 0.08))]
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('piteira', [tuple(h) for h in holder], 0.0035, 8),
+                                            P('piteira', lin((0.02, 0.02, 0.02)), roughness=0.15))))
+        parts.append(lib.to_mesh(lib.assign(lib.tube_along('cigarro', [tuple(holder[1]),
+                                                                        tuple(holder[1] + Vector((-0.012, 0.03, 0.02)))],
+                                                           0.004, 8), P('cigarro', lin((0.9, 0.88, 0.82))))))
+        parts.append(sphere('brasa', holder[1] + Vector((-0.013, 0.032, 0.021)), (0.005, 0.005, 0.005),
+                            P('brasa', lin((1, 0.4, 0.1)), emission=lin((1, 0.35, 0.05)), strength=8), 8, 6))
+
+
+def fringe(name, z0, length, hx, hy, mat, n=72):
+    """Fileira de franjas finas ao redor de um retângulo arredondado (um só objeto)."""
+    bm = bmesh.new()
+    for i in range(n):
+        a = i / n * 2 * math.pi
+        x = hx * math.copysign(abs(math.cos(a)) ** 0.6, math.cos(a)) * 1.02
+        y = hy * math.copysign(abs(math.sin(a)) ** 0.6, math.sin(a)) * 1.02
+        w = 0.006
+        tx, ty = -math.sin(a) * w, math.cos(a) * w
+        sway = 0.012 * math.sin(i * 1.7)
+        vs = [bm.verts.new((x - tx, y - ty, z0 + length)), bm.verts.new((x + tx, y + ty, z0 + length)),
+              bm.verts.new((x * 1.05 + tx + sway, y * 1.05 + ty, z0)), bm.verts.new((x * 1.05 - tx + sway, y * 1.05 - ty, z0))]
+        bm.faces.new(vs)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    o = bpy.data.objects.new(name, me)
+    o.modifiers.new('esp', 'SOLIDIFY').thickness = 0.002
+    lib.assign(o, mat)
+    return lib.to_mesh(lib.link(o))
+
+
 def gloves(parts, key, wrists, glove_mat):
     for sx, (el, wr) in wrists.items():
         d = (wr - el).normalized()
@@ -384,8 +502,8 @@ def build_person(key, p):
     parts = []
     seated = p['seated']
     dz = -0.14 if seated else 0.0          # sentado: tronco desce até o assento (0.46)
-    glove = P(f'{key}_luva', lin((0.12, 0.08, 0.06) if p['body'] == 'sobretudo' else (0.92, 0.9, 0.85)),
-              roughness=0.45 if p['body'] == 'sobretudo' else 0.55)
+    glove_col = {'sobretudo': (0.12, 0.08, 0.06), 'melindrosa': (0.03, 0.025, 0.025)}.get(p['body'], (0.92, 0.9, 0.85))
+    glove = P(f'{key}_luva', lin(glove_col), roughness=0.3 if p['body'] == 'melindrosa' else 0.5)
     shoe = P(f'{key}_sapato', lin((0.06, 0.04, 0.03)), roughness=0.25)
     shirt = P(f'{key}_camisa', lin(p['shirt']), roughness=0.6)
     if p['body'] == 'terno':
@@ -455,6 +573,16 @@ def build_person(key, p):
                            center0=(0, 0.125), center1=(0, 0.11), bevel=0.0))
         sleeve_mat = coat
         legs_mat = P(f'{key}_meia', lin((0.1, 0.07, 0.06)), roughness=0.5)
+    elif p['body'] == 'melindrosa':
+        dress = P(f'{key}_vestido', lin(p['dress']), roughness=0.35, metallic=0.6)
+        parts.append(prism('vestido', 0.46 + dz, 1.22 + dz, (0.2, 0.15), (0.19, 0.115), dress, bevel=0.03))
+        parts.append(prism('ombros', 1.22 + dz, 1.28 + dz, (0.19, 0.115), (0.15, 0.09), dress, bevel=0.025))
+        parts.append(prism('faixa_quadril', 0.74 + dz, 0.8 + dz, (0.205, 0.155), (0.205, 0.155),
+                           P(f'{key}_faixa', lin((0.08, 0.06, 0.05)), roughness=0.3), bevel=0.01))
+        for z0, length in ((0.48, 0.2), (0.72, 0.18), (0.98, 0.16)):
+            parts.append(fringe(f'franja', z0 + dz, length, 0.21, 0.16, dress))
+        sleeve_mat = None
+        legs_mat = P(f'{key}_meia', lin((0.35, 0.25, 0.2)), roughness=0.45)
     else:  # vestido com corpete, saia evasê e gola alta de renda
         dress = P(f'{key}_vestido', lin(p['dress']), roughness=0.7)
         dress2 = P(f'{key}_vestido_detalhe', lin(p['dress2']), roughness=0.6)
@@ -485,6 +613,7 @@ def build_person(key, p):
                                                                          (0.06, 0.13, 1.06 + dz)], 0.005, 6), body)))
     # gola alta (esconde o pescoço): colarinho no terno, renda no vestido
     collar = lib.lathe('gola', [(0.1, 0.0), (0.095, 0.11)] if p['body'] == 'terno' else
+                       [(0.09, 0.0), (0.094, 0.03), (0.09, 0.06), (0.094, 0.09), (0.09, 0.12)] if p['body'] == 'melindrosa' else
                        [(0.1, 0.0), (0.085, 0.06), (0.1, 0.12)], 40,
                        arc=(math.pi * 0.15, math.pi * 1.85) if p['body'] == 'terno' else (0, 2 * math.pi))
     collar.location = (0, -0.005, 1.28 + dz)
@@ -524,12 +653,21 @@ def build_person(key, p):
         sh = Vector((sx * 0.25, 0, 1.22 + dz))
         if seated:
             el, wr = Vector((sx * 0.27, 0.12, 0.82)), Vector((sx * 0.16, 0.36, 0.8))
+        elif p['body'] == 'melindrosa' and sx > 0:
+            el, wr = Vector((0.3, 0.1, 0.98)), Vector((0.2, 0.2, 1.16))
         else:
             el, wr = Vector((sx * 0.29, 0.04, 0.96)), Vector((sx * 0.27, 0.13, 0.78))
-        parts.append(chain_skin('manga', [sh, el, wr], [(0.075, 0.075), (0.062, 0.062), (0.06, 0.06)], 1, sleeve_mat))
+        if sleeve_mat is None:  # braço de porcelana com luva longa até o cotovelo
+            parts.append(chain_skin('braco', [sh, el], [(0.055, 0.055), (0.045, 0.045)], 1,
+                                    P(f'{key}_porcelana_braco', lin((0.93, 0.89, 0.82)), roughness=0.25)))
+            parts.append(chain_skin('luva_longa', [el, wr], [(0.05, 0.05), (0.042, 0.042)], 1, glove))
+        else:
+            parts.append(chain_skin('manga', [sh, el, wr], [(0.075, 0.075), (0.062, 0.062), (0.06, 0.06)], 1, sleeve_mat))
         wrists[sx] = (el, wr)
     gloves(parts, key, wrists, glove)
-    build_mask_head(parts, key, p, Vector((0, 0.0, 1.5 + dz)))
+    head_c = Vector((0, 0.0, 1.5 + dz))
+    accessories(parts, key, p, wrists, head_c, dz)
+    build_mask_head(parts, key, p, head_c)
     lib.export(parts, os.path.join(OUT, f'mascara_{key}.glb'))
     clear()
 

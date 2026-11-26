@@ -35,3 +35,7 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 - Protótipo A-Frame preservado em `legacy/aframe/` (inclusive o README antigo). `npm run start:legacy` abre a versão antiga.
 - Ensaios novos: `npm run test:browser` (9 pedidos, arremesso, reinício) e `npm run test:xr` (Quest 3 simulado pegando, soltando e despejando). `?xr-emulate` simula o Quest no navegador.
 - `npm run dev:quest` serve HTTPS na rede local para abrir no headset.
+
+**Felipe (26/11/2026):** "proponha 3 estilos. mas entenda que quero uma vibe meio eerie, 3d, quero que voce proponha alguns estilos ja tendo em mente e desenhando o bar como um todo, cena de bar realista, mesas no fundo pessoas convresando porta que abre la atras pianista tocando, tudo mais"
+→ Laboratório de estilos (`estilos.html`, código em `src/lab/`): o bar inteiro em 3D, com salão, mesas, cabines, gente conversando, porta que abre com uma silhueta, pianista de costas, janelas, relógio e som 3D (piano, murmúrio, porta). Três estilos: Âmbar Noturno, Fita Perdida e Gravura.
+→ Proposta, planta e imagens em [estilos_v1.md](estilos_v1.md) e [estilos/](estilos/). Recomendação: Âmbar Noturno como base, degradando para "fita" ao longo da noite.

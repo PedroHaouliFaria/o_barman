@@ -6,5 +6,8 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ mode }) => ({
   plugins: [react(), ...(mode === 'quest' ? [basicSsl()] : [])],
   server: { port: 5173 },
-  build: { target: 'es2022' },
+  build: {
+    target: 'es2022',
+    rollupOptions: { input: { main: 'index.html', estilos: 'estilos.html' } },
+  },
 }));

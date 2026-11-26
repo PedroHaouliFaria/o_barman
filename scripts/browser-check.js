@@ -41,7 +41,8 @@ try {
     await page.screenshot({ path: evidence + '/' + name + '.png' });
   };
 
-  await page.goto(url);
+  // ?leve: sem sombras e pós-processamento (o Chrome do ensaio não tem GPU); a mecânica é a mesma.
+  await page.goto(url + '/?leve');
   await page.waitForFunction(() => !document.querySelector('#start').disabled, {}, { timeout: 30000 });
   const layout = await page.evaluate(() => {
     const canvas = document.querySelector('.stage canvas').getBoundingClientRect();

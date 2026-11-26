@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { loadBarAssets, loadModels, type BarAssets } from '../lab/assets';
 import { buildBar } from '../lab/bar';
 import { STYLES } from '../lab/styles';
+import { mergeStatic } from './merge-static';
 
 /** O tampo do balcão novo fica 8 mm acima do greybox; o bar desce para alinhar. */
 export const ART_Y = -0.008;
@@ -33,12 +34,7 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
   // Mesmas luzes de base do laboratório.
   const ambient = new THREE.AmbientLight(style.light.ambient[0], style.light.ambient[1]);
   const hemi = new THREE.HemisphereLight(style.light.hemi[0], style.light.hemi[1], style.light.hemi[2]);
-  // Luz de trabalho suave sobre a bancada e a estante: o jogador precisa ler rótulos e ver o copo.
-  const work = new THREE.PointLight('#ffc98a', 1.4, 3.2, 2);
-  work.position.set(0, 2.05, -0.25);
-  const back = new THREE.PointLight('#ffb36b', 0.9, 2.6, 2);
-  back.position.set(0, 2.1, 0.55);
-  root.add(ambient, hemi, work, back);
+  root.add(ambient, hemi);
   scene.background = new THREE.Color(style.background);
   scene.fog = new THREE.FogExp2(style.fog.color, style.fog.density);
 
@@ -51,9 +47,12 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
   }
 
   let loaded: BarAssets | null = null;
+  let mergeReport = { before: 0, after: 0 };
   const ready: Promise<BarAssets> = loadBarAssets().then((assets) => {
     bar.applyAssets(assets);
     loaded = assets;
+    // Tudo o que é fixo vira poucas malhas (uma por material): ~10x menos chamadas de desenho.
+    if (!new URLSearchParams(location.search).has('semjuntar')) mergeReport = mergeStatic(bar.root);
     return assets;
   });
 
@@ -75,44 +74,50 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
       if (!person) return;
       person.position.copy(f.position);
       person.rotation.copy(f.rotation);
+      person.userData.dynamic = true; // aparece e some conforme o pedido
       f.parent!.add(person);
       tablePeople.push(person);
     });
     return models;
   });
 
-  // ---- Desempenho ----
-  // 'alta' = computador (sombras, vidro com transmissão, todas as luzes do laboratório).
-  // 'vr'   = Quest 3: sem sombras, vidro sem passe de transmissão, só as luzes que contam
-  //          (pendentes do balcão, luz de trabalho, piano). Velas e arandelas ficam no brilho próprio.
-  let quality: 'alta' | 'vr' = 'alta';
-  const workLights = new Set<THREE.Light>([work, back]);
+  // ---- Luz: igual ao laboratório, no computador e no Quest ----
+  // Regra do Felipe (26/11/2026): atmosfera é o mais importante; luz e som não entram em economia.
+  // Todas as luzes, sombras e o vidro âmbar ficam nos dois. No Quest só o mapa de sombra fica
+  // menor (512 px): mesma luz e mesmas sombras, com borda um pouco mais macia.
+  // O perfil 'leve' (?leve) existe só para os ensaios no simulador sem GPU.
+  let quality: 'alta' | 'vr' | 'leve' = 'alta';
   function applyQuality(gl: THREE.WebGLRenderer) {
-    const vr = quality === 'vr';
-    gl.shadowMap.enabled = !vr;
-    const pendants = new Set(bar.pendantLights);
+    const light = quality === 'leve';
+    gl.shadowMap.enabled = !light;
     bar.root.traverse((o) => {
-      const light = o as THREE.Light;
-      if (light.isLight) {
-        if (vr) light.castShadow = false;
-        else if (light.userData.castShadow !== undefined) light.castShadow = light.userData.castShadow;
-        light.userData.castShadow ??= light.castShadow;
-        const essential = pendants.has(light as THREE.PointLight) || workLights.has(light) || (light as THREE.SpotLight).isSpotLight;
-        light.visible = !vr || essential;
+      const l = o as THREE.Light;
+      if (l.isLight) {
+        l.userData.castShadow ??= l.castShadow;
+        l.castShadow = light ? false : l.userData.castShadow;
+        l.visible = true;
+        const shadow = (l as THREE.PointLight).shadow;
+        if (shadow && l.castShadow) {
+          const size = quality === 'vr' ? 512 : 1024;
+          if (shadow.mapSize.x !== size) {
+            shadow.mapSize.set(size, size);
+            shadow.map?.dispose();
+            shadow.map = null;
+          }
+        }
         return;
       }
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.userData.castShadow ??= mesh.castShadow;
-      mesh.castShadow = vr ? false : mesh.userData.castShadow;
+      mesh.castShadow = light ? false : mesh.userData.castShadow;
       for (const m of (Array.isArray(mesh.material) ? mesh.material : [mesh.material]) as THREE.MeshPhysicalMaterial[]) {
         if (!m.isMeshPhysicalMaterial) continue;
         m.userData.transmission ??= m.transmission;
         m.userData.opacity ??= m.opacity;
         if (!m.userData.transmission) continue;
-        m.transmission = vr ? 0 : m.userData.transmission;
-        m.transparent = true;
-        m.opacity = vr ? 0.55 : m.userData.opacity;
+        m.transmission = light ? 0 : m.userData.transmission;
+        m.opacity = light ? 0.55 : m.userData.opacity;
         m.needsUpdate = true;
       }
     });
@@ -122,13 +127,14 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
     bar,
     ready,
     /** Troca o perfil de desempenho (o jogo chama ao entrar e sair do VR). */
-    setQuality(mode: 'alta' | 'vr', gl: THREE.WebGLRenderer) {
+    setQuality(mode: 'alta' | 'vr' | 'leve', gl: THREE.WebGLRenderer) {
       quality = mode;
       applyQuality(gl);
       ready.then(() => applyQuality(gl));
     },
     seatedLoaded,
     tablePeople,
+    merged: () => mergeReport,
     /** Banqueta extra para o cliente sentado no balcão (null até os modelos carregarem). */
     stool: () => loaded?.models.banqueta?.clone() ?? null,
     /** Atos: a luz do salão vai sumindo e as lâmpadas tremem mais. */

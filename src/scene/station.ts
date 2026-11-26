@@ -81,7 +81,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   };
   // ?leve: perfil do Quest também no computador (testes automáticos e máquinas fracas).
   const lightMode = typeof location !== 'undefined' && new URLSearchParams(location.search).has('leve');
-  let lastVr: boolean | null = null;
+  let lastMode: string | null = null;
   const showTips = tipJar(root, (parent, at, w, h) => keepPanel(paperLabel(parent, at, w, h, [0, 0, 0], { title: 'Gorjetas' })), ORDERS.length * 10);
   const person = target('customer', 'Cliente', [0, 0, -1.53]);
   // A mão estendida fica sobre o balcão, mais perto do bartender (alcance em VR).
@@ -392,6 +392,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       actors: events.actors,
       keep: new Set([shakerSurface, gauge]),
     });
+    controls.dressHands(get('mao_cliente'));
   });
   const controls = bindControls({
     scene,
@@ -517,16 +518,24 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       illuminate(session.order?.act ?? 1);
     },
     music: () => pianist.stats(),
+    /** Diagnóstico: luzes do bar e se estão ligadas. */
+    lightReport: () => {
+      const out: string[] = [];
+      art.bar.root.traverse((o) => {
+        if ((o as THREE.Light).isLight) out.push(o.type + ':' + o.visible + ':' + (o as THREE.Light).castShadow);
+      });
+      return out;
+    },
     setSound(on: boolean) {
       soundOn = on;
       pianist.setEnabled(on);
       illuminate(session.order?.act ?? 1);
     },
     frame(time: number, dt: number, xrFrame?: XRFrame) {
-      const vr = gl.xr.isPresenting || lightMode;
-      if (vr !== lastVr) {
-        lastVr = vr;
-        art.setQuality(vr ? 'vr' : 'alta', gl);
+      const mode = lightMode ? 'leve' : gl.xr.isPresenting ? 'vr' : 'alta';
+      if (mode !== lastMode) {
+        lastMode = mode;
+        art.setQuality(mode, gl);
       }
       art.update(time / 1000, dt / 1000);
       controls.frame(time, dt, xrFrame);
@@ -561,6 +570,20 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     pointOf(id: string, y: number) {
       const p = root.worldToLocal(items.get(id)!.obj.localToWorld(new THREE.Vector3(0, y, 0)));
       return { x: p.x, y: p.y, z: p.z };
+    },
+    /** Diagnóstico: malhas visíveis por grupo de topo e luzes visíveis por tipo. */
+    meshReport() {
+      const out: Record<string, number> = {};
+      const lights: string[] = [];
+      scene.traverseVisible((o) => {
+        if ((o as THREE.Light).isLight) lights.push(o.type + (o.parent?.name ? '@' + o.parent.name : ''));
+        if (!(o as THREE.Mesh).isMesh) return;
+        let top: THREE.Object3D = o;
+        while (top.parent && top.parent !== root && top.parent !== art.bar.root && top.parent !== scene) top = top.parent;
+        const key = (top.parent === art.bar.root ? 'bar/' : top.parent === root ? 'estacao/' : '') + (top.name || top.type);
+        out[key] = (out[key] ?? 0) + 1;
+      });
+      return { meshes: Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 25), lights };
     },
     /** Custo do último quadro (chamadas de desenho, triângulos, luzes ativas). Diagnóstico de desempenho. */
     stats() {

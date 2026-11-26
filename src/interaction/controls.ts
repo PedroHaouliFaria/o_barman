@@ -800,6 +800,20 @@ export function bindControls(o: ControlsOptions) {
       hands.map((h) => ({ side: h.side, visible: h.el.visible, held: h.held?.id ?? null, speed: h.velocity.length(), motion: { ...h.motion }, pos: h.el.position.toArray() })),
     releaseAll,
     restoreThrown,
+    /** Troca as mãos de bloco pela mão de porcelana (estilo Máscara): dedos para a frente,
+     *  palma voltada para dentro, punho da manga para trás. A esquerda é o espelho da direita. */
+    dressHands(model: THREE.Object3D | null) {
+      if (!model) return;
+      for (const hand of hands) {
+        for (const child of [...hand.el.children]) hand.el.remove(child);
+        const copy = model.clone();
+        const left = hand.side === 'left';
+        copy.scale.set(left ? -1 : 1, 1, 1);
+        copy.rotation.set(0, Math.PI, left ? -Math.PI / 2 : Math.PI / 2, 'YXZ');
+        copy.traverse((o) => (o.raycast = () => {}));
+        hand.el.add(copy);
+      }
+    },
     /** Novo cliente: o copo volta à bancada (fica invisível até ser pego na estante). */
     moveDrawer: physics.moveDrawer,
     clearGlass() {

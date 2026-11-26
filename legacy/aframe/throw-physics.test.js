@@ -27,3 +27,25 @@ test('arremesso conserva impulso e giro, derruba outra garrafa e repousa no chã
   physics.step(16);
   assert.equal(obj.position.y, 2);
 });
+
+test('o fundo da gaveta aberta sustenta itens soltos e os acompanha ao fechar e abrir', () => {
+  const transform = (x, y, z) => ({ position: new Vec3(x, y, z), quaternion: new Quaternion() });
+  const drawer = { object3D: transform(0.38, 0.918, -0.14), children: [{
+    tagName: 'A-BOX', object3D: transform(0.159, -0.05, 0),
+    getAttribute: () => ({ width: 0.30, height: 0.014, depth: 0.52 }),
+  }] };
+  const physics = throwPhysics({ children: [] }, [], () => false, drawer);
+  const ice = { id: 'ice', el: { object3D: transform(0.53, 1.15, -0.14) } };
+  physics.launch(ice, {}, new Vec3(0, -0.5, 0), new Vec3());
+  const settle = () => { for (let i = 0; i < 150; i++) physics.step(16); };
+  settle();
+  const pos = ice.el.object3D.position;
+  assert.ok(Math.abs(pos.y - 0.910) < 0.003);
+  for (const dx of [0.32, -0.32]) {
+    const x = pos.x;
+    assert.ok(physics.moveDrawer(dx));
+    settle();
+    assert.ok(Math.abs(pos.x - x - dx) < 0.003);
+    assert.ok(Math.abs(pos.y - 0.910) < 0.003);
+  }
+});

@@ -18,6 +18,7 @@ function add(game, target, ...ingredients) {
 function openShift() {
   const game = createGame();
   perform(game, 'start');
+  perform(game, 'selectGlass', { glass: 'highball' });
   return game;
 }
 
@@ -26,8 +27,10 @@ function fillCuba(game) {
 }
 
 function nextCaipirinha(game) {
+  if (!game.state.glass.type) perform(game, 'selectGlass', { glass: 'highball' });
   fillCuba(game);
   perform(game, 'deliver');
+  perform(game, 'selectGlass', { glass: 'rocks' });
 }
 
 function nextWhiskey(game) {
@@ -36,6 +39,7 @@ function nextWhiskey(game) {
   perform(game, 'muddle');
   add(game, 'glass', 'cachaca', 'ice');
   perform(game, 'deliver');
+  perform(game, 'selectGlass', { glass: 'coupe' });
 }
 
 function shakeAndPour(game) {
@@ -60,6 +64,7 @@ const expectedOrders = [
 
 function prepareOrder(game) {
   const { technique, ingredients, event } = game.order;
+  if (!game.state.glass.type) perform(game, 'selectGlass', { glass: game.order.glass });
   if (event) perform(game, 'collect', { ingredient: event });
   add(game, technique === 'shake' ? 'shaker' : 'glass', ...Object.keys(ingredients));
   if (technique === 'shake') shakeAndPour(game);
@@ -72,6 +77,7 @@ function reachOrder(number) {
     prepareOrder(game);
     perform(game, 'deliver');
   }
+  if (!game.state.glass.type) perform(game, 'selectGlass', { glass: game.order.glass });
   assert.equal(game.order?.number, number);
   return game;
 }
@@ -236,7 +242,9 @@ test('DOM-10 | menu bloqueia preparo e reinício zera sessão, recipientes, prog
   perform(game, 'toggleLid');
   perform(game, 'togglePause');
   perform(game, 'restart');
-  assert.deepEqual(game.state, openShift().state);
+  const fresh = createGame();
+  perform(fresh, 'start');
+  assert.deepEqual(game.state, fresh.state);
   assert.equal(game.order.name, 'Cuba Libre');
 });
 
@@ -358,6 +366,7 @@ test('ENV-REC | lavar diretamente a coqueteleira recupera o especial sem perder 
 test('gorjetas acumulam 10, 3 ou 0 moedas conforme as entregas erradas de cada pedido', () => {
   const game = openShift();
   for (const [mistakes, total] of [[0, 10], [1, 13], [2, 13], [3, 13], [0, 23]]) {
+    perform(game, 'selectGlass', { glass: game.order.glass });
     const previous = game.state.tips;
     for (let attempt = 0; attempt < mistakes; attempt++) {
       add(game, 'glass', 'ice');
@@ -371,4 +380,22 @@ test('gorjetas acumulam 10, 3 ou 0 moedas conforme as entregas erradas de cada p
   }
   perform(game, 'restart');
   assert.equal(game.state.tips, 0);
+});
+
+test('cada cliente aguarda a escolha manual do copo, inclusive no primeiro pedido', () => {
+  const game = createGame();
+  perform(game, 'start');
+  for (const order of ORDERS) {
+    assert.equal(game.state.glass.type, null);
+    assert.equal(command(game, 'add', { target: 'glass', ingredient: 'ice' }).ok, false);
+    assert.equal(command(game, 'deliver').ok, false);
+    assert.equal(game.state.orderMistakes, 0);
+    add(game, 'shaker', 'ice');
+    assert.equal(command(game, 'transfer').ok, false);
+    assert.equal(game.state.shaker.ingredients.ice, 1);
+    perform(game, 'rinse', { target: 'shaker' });
+    perform(game, 'selectGlass', { glass: order.glass });
+    prepareOrder(game);
+    perform(game, 'deliver');
+  }
 });

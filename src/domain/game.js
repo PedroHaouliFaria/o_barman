@@ -21,7 +21,7 @@ function initialState() {
     complaint: '',
     orderIndex: 0,
     event: null,
-    glass: emptyGlass(ORDERS[0].glass),
+    glass: emptyGlass(null),
     shaker: emptyShaker(),
     feedback: 'Inicie o atendimento.',
   };
@@ -37,6 +37,7 @@ export function createGame() {
 
   function deliver() {
     const order = ORDERS[state.orderIndex];
+    if (!state.glass.type) return report(false, 'Pegue um copo na estante.');
     if (validateDrink(state.glass, order)) {
       state.orderMistakes++;
       const choices = complaints.map(write => write(order.name)).filter(line => line !== state.complaint);
@@ -54,7 +55,7 @@ export function createGame() {
     state.orderIndex++;
     const next = ORDERS[state.orderIndex];
     state.event = next?.event ? { ingredient: next.event, status: 'available' } : null;
-    state.glass = emptyGlass(next?.glass ?? order.glass);
+    state.glass = emptyGlass(null);
     state.shaker = emptyShaker();
     if (!next) {
       state.phase = 'finished';

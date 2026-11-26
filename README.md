@@ -13,6 +13,8 @@ npm run dev
 
 Abra o endereço que o Vite mostrar (normalmente `http://localhost:5173`) e clique em um ingrediente para iniciar o turno com ele na mão. Você também pode usar **Iniciar turno** na barra superior ou a placa **Iniciar** da estação. Use **Caderno** para os controles assistidos. `npm run build` gera o site estático em `dist/`, que pode ser servido por qualquer hospedagem HTTPS.
 
+**Arte final (laboratório):** `http://localhost:5173/estilos.html` mostra o bar no estilo Âmbar Noturno; `?pessoas=ato1` (até `ato4`) mostra os clientes no estilo Máscara. Tudo é gerado por código no Blender (`art/`); catálogo em [docs/v2/ASSETS.md](docs/v2/ASSETS.md) e mapa da documentação em [docs/v2/README.md](docs/v2/README.md).
+
 O protótipo original em A-Frame está preservado em [legacy/aframe](legacy/aframe/README.md) e abre com `npm run start:legacy`.
 
 ## Jogar
@@ -109,6 +111,10 @@ src/
   interaction/                     Gestos (despejar, agitar, mexer, macerar), controles e física Rapier
   scene/                           Bar em primitivas (greybox), placas, eventos ambientais
   dev/xr-emulate.ts                Simulador de Quest 3 para desenvolvimento
+  lab/                             Laboratório da arte final (estilos.html): bar, assets, pessoas
+art/blender/                       Scripts Blender que geram todos os modelos (sem assets externos)
+art/gerar_modelos.sh               Gera no Windows e copia para public/models/
+public/models/                     cenario/, props/, pessoas/ (estilo Máscara), experimentos/
 scripts/                           Ensaios de navegador e de VR simulada
 tests/                             Testes unitários em Node.js
 legacy/aframe/                     Protótipo original em A-Frame (preservado)

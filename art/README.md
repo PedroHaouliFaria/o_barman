@@ -16,14 +16,15 @@ Todos os assets do jogo são gerados por scripts Python no Blender: modelos, tex
 
 ## Como gerar
 
-O pesado (bake na GPU) roda no Windows (`simaonote`, Blender 5.3 com RTX 4070):
+O pesado (bake na GPU) roda no Windows (`simaonote`, Blender 5.3 com RTX 4070). Um comando faz tudo e copia para as pastas certas de `public/models/`:
 
 ```sh
-COPYFILE_DISABLE=1 tar czf - art/blender | ssh simaonote "tar xzf - -C C:/barman"
-ssh simaonote "& 'C:\Program Files\Blender Foundation\Blender 5.3\blender.exe' -b -P C:/barman/art/blender/build_balcao.py -- C:/barman/out"
-ssh simaonote "& 'C:\Program Files\Blender Foundation\Blender 5.3\blender.exe' -b -P C:/barman/art/blender/build_salao.py -- C:/barman/out"
-scp "simaonote:C:/barman/out/*.glb" public/models/
+art/gerar_modelos.sh                     # tudo
+art/gerar_modelos.sh salao               # só sala e móveis
+art/gerar_modelos.sh mascaras turista    # só uma pessoa
 ```
+
+Catálogo completo dos modelos: [docs/v2/ASSETS.md](../docs/v2/ASSETS.md).
 
 Em qualquer máquina com Blender 4.2+ funciona igual: `blender -b -P art/blender/build_balcao.py -- <pasta>`.
 

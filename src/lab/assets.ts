@@ -121,8 +121,24 @@ function fixMaterials(root: THREE.Object3D) {
   return root;
 }
 
+/**
+ * Pastas de public/models:
+ *   cenario/      sala e móveis (art/blender/build_salao.py, build_balcao.py)
+ *   props/        copos e garrafas (build_balcao.py)
+ *   pessoas/      clientes e pianista no estilo Máscara (build_mascaras.py) — mascara_<id>.glb
+ *   experimentos/ estilos de pessoa testados e descartados (build_pessoas*.py) — pessoa_<estilo>.glb
+ */
+export function modelPath(name: string) {
+  const file = name.endsWith('.glb') ? name : name + '.glb';
+  if (file.includes('/')) return file;
+  if (file.startsWith('mascara_')) return 'pessoas/' + file;
+  if (file.startsWith('pessoa_')) return 'experimentos/' + file;
+  if (file === 'copos.glb' || file === 'garrafas.glb') return 'props/' + file;
+  return 'cenario/' + file;
+}
+
 async function load(name: string) {
-  const gltf = await loader.loadAsync(base + name);
+  const gltf = await loader.loadAsync(base + modelPath(name));
   return fixMaterials(gltf.scene);
 }
 

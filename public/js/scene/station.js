@@ -1,9 +1,10 @@
 import { BOOK_RECIPES, GLASSES, INGREDIENTS, ORDERS } from '../domain/game.js';
-import { box, cylinder, customer, entity, group, room, sign, sphere } from './blockout.js';
+import { box, cylinder, customer, entity, group, room, sign, sphere } from './blockout.js?v=drawer-solid';
 import { buildEvents, specimen } from './environment.js?v=throw-physics';
+import { toolDrawer } from './tool-drawer.js?v=free-placement';
 import { tipJar } from './tip-jar.js';
-import { vesselFeedback } from './vessel-feedback.js?v=two-hands';
-import { bindControls } from '../components/station-controls.js?v=quest-input-4';
+import { vesselFeedback } from './vessel-feedback.js?v=technique-feedback';
+import { bindControls } from '../components/station-controls.js?v=free-placement';
 
 import { bottleShelves } from '../components/bottle-placement.js';
 
@@ -65,6 +66,7 @@ export function mountStation(scene, session, callbacks = {}) {
   const manual = group(root, [0.99, 1.085, -0.12]);
   manual.setAttribute('rotation', '0 -88 0');
   box(manual, [0, 0.12, 0], [0.3, 0.24, 0.12], '#694c35');
+  const toggleDrawer = toolDrawer(target, items);
   const book = group(manual, [0, 0.25, 0]);
   book.setAttribute('rotation', '-48 0 0');
   box(book, [0, 0, 0], [0.69, 0.36, 0.027], '#583626');
@@ -225,7 +227,7 @@ export function mountStation(scene, session, callbacks = {}) {
     const el = target(id, name, at);
     return label(el, [0, 0, 0], w, 0.081, { lines, center: true, font: 0.35 }, rotation);
   }
-  const glassType = button('type', 'Trocar tipo de copo', [0.16, 1.14, -0.63], 0.18, ['TIPO DE COPO']);
+  const glassType = label(root, [0.16, 1.14, -0.63], 0.18, 0.081, {}, '-40 0 0');
   const toggle = button('pause', 'Turno / pausa', [-1.15, 1.69, -1.21], 0.21, ['INICIAR'], '0 20 0');
   button('height', 'Ajustar altura', [-1.15, 1.58, -1.21], 0.21, ['ALTURA'], '0 20 0');
 
@@ -293,6 +295,10 @@ export function mountStation(scene, session, callbacks = {}) {
     feedback('Altura da bancada ajustada à posição atual.');
   }
   function activate(id) {
+    if (id === 'drawer') {
+      toggleDrawer(controls.moveDrawer);
+      return true;
+    }
     if (id === 'height') {
       recenter();
       return true;
@@ -311,17 +317,6 @@ export function mountStation(scene, session, callbacks = {}) {
               ? 'restart'
               : 'togglePause',
       });
-      return true;
-    }
-    if (lastState.paused) return false;
-    if (lastState.phase !== 'playing') return false;
-    if (id.startsWith('choose-')) {
-      act({ type: 'selectGlass', glass: id.slice(7) });
-      return true;
-    }
-    if (id === 'type') {
-      const keys = Object.keys(GLASSES);
-      act({ type: 'selectGlass', glass: keys[(keys.indexOf(lastState.glass.type) + 1) % keys.length] });
       return true;
     }
     return false;
@@ -354,6 +349,7 @@ export function mountStation(scene, session, callbacks = {}) {
       if (newSession) controls.restoreThrown();
     }
     if (changed) {
+      controls.clearGlass();
       drawCustomer(state.orderIndex, state.phase === 'playing');
       illuminate(session.order?.act ?? (state.phase === 'finished' ? ORDERS.at(-1).act : 1));
       clock.print({ lines: [session.time], font: 0.57, center: true });
@@ -390,8 +386,9 @@ export function mountStation(scene, session, callbacks = {}) {
       center: true,
       font: 0.35,
     });
+    glass.object3D.visible = Boolean(state.glass.type);
     glassType.print({
-      lines: ['COPO · ' + GLASSES[state.glass.type].toUpperCase()],
+      lines: [state.glass.type ? 'COPO · ' + GLASSES[state.glass.type].toUpperCase() : 'SEM COPO'],
       font: 0.3,
       center: true,
     });
@@ -419,7 +416,7 @@ export function mountStation(scene, session, callbacks = {}) {
   return {
     render,
     recenter,
-    ingredientAdded: contents.added,
+    confirmPreparation: contents.confirmPreparation,
     selectPage,
     destroy() {
       controls.destroy();

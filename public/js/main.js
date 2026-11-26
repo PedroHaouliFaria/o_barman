@@ -1,5 +1,5 @@
-import { BOOK_RECIPES, createGame, INGREDIENTS, GLASSES, ORDERS } from './domain/game.js?v=customer-dialogue';
-import { mountStation } from './scene/station.js?v=quest-input-4';
+import { BOOK_RECIPES, createGame, INGREDIENTS, GLASSES, ORDERS } from './domain/game.js?v=manual-glass-1';
+import { mountStation } from './scene/station.js?v=free-placement';
 import { createAudio } from './audio.js';
 
 const game = createGame();
@@ -79,7 +79,7 @@ function render() {
     byId('customer').textContent = order.customer;
     byId('dialogue').textContent = '“' + (state.complaint || order.dialogue) + '”';
     byId('drink').textContent = order.name;
-    const stock = 'Copo ' + GLASSES[state.glass.type] + ' · ' + (state.glass.returned ? 'devolvido' : listIngredients(state.glass));
+    const stock = !state.glass.type ? 'Sem copo' : 'Copo ' + GLASSES[state.glass.type] + ' · ' + (state.glass.returned ? 'devolvido' : listIngredients(state.glass));
     const shakerList = listIngredients(state.shaker);
     const shakerStock =
       'Coqueteleira ' +
@@ -101,7 +101,7 @@ function render() {
       }),
     );
     byId('bench-stock').textContent = [stock, shakerStock, technique].filter(Boolean).join(' / ');
-    byId('glass-type').value = state.glass.type;
+    byId('glass-type').value = state.glass.type ?? '';
     byId('lid').textContent = state.shaker.closed ? 'Abrir tampa' : 'Fechar tampa';
     byId('pause').textContent = state.paused ? 'Retomar turno' : 'Pausar turno';
     for (const control of document.querySelectorAll('#order button, #bench button, #bench select'))
@@ -124,7 +124,7 @@ function act(action) {
   const result = game.dispatch(action);
   updateAddButton();
   render();
-  if (result.ok && action.type === 'add') station?.ingredientAdded(action);
+  if (result.ok) station?.confirmPreparation(action);
   announce(result.message);
   if (!game.state.paused) audio.play(action, result.ok);
   return result;

@@ -3,14 +3,14 @@ export const EVENT_HINT_DELAY = 12000;
 
 export const EVENT_SOURCES = {
   cockroach: {
-    position: [0, 0.77, -0.544],
+    position: [0, 0.77, -0.575],
     clue: 'Barata no balcão',
     hint: 'Olhe para baixo, na face interna do balcão.',
   },
   slug_slime: {
-    position: [0, -0.009, 0.78],
-    clue: 'Há um rastro no chão sob a estante de bebidas.',
-    hint: 'Atrás de você, no chão sob as garrafas, clique no rastro ou use o gatilho para colher a gosma.',
+    position: [0, -0.009, 0.2],
+    clue: 'Há um rastro no chão, junto ao armário das garrafas.',
+    hint: 'Atrás de você, no chão junto ao armário das garrafas: aponte para a lesma e use o gatilho (ou clique) para colher a gosma.',
   },
   spider: {
     position: [0, 1.98, -0.12],

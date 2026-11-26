@@ -8,6 +8,12 @@ import { BOOK_RECIPES, createGame, GLASSES, INGREDIENTS, ORDERS } from './domain
 import { initPhysics } from './interaction/throw-physics';
 import type { Station } from './scene/station';
 import type { Action } from './scene/types';
+import '@fontsource/cinzel/600.css';
+import '@fontsource/cinzel/700.css';
+import '@fontsource/cormorant-garamond/500.css';
+import '@fontsource/cormorant-garamond/500-italic.css';
+import '@fontsource/cormorant-garamond/600.css';
+import '@fontsource/cormorant-garamond/600-italic.css';
 import './style.css';
 
 const game = createGame();
@@ -28,7 +34,12 @@ function updateAddButton() {
     select('ingredient').value === 'sugar' ? (sugarScooped ? 'Adicionar colherada' : 'Pegar com a colher') : 'Adicionar';
 }
 function announce(text: string) {
-  byId('feedback').textContent = text;
+  const toast = byId('feedback');
+  toast.textContent = text;
+  // Reinicia a animação: o aviso aparece, fica e esmaece.
+  toast.classList.add('again');
+  void toast.offsetWidth;
+  toast.classList.remove('again');
 }
 function listIngredients(vessel: { ingredients: Record<string, number> }) {
   return (
@@ -63,12 +74,13 @@ function showPage(id: string) {
 function render() {
   const { state, order } = game as { state: any; order: any };
   const playing = state.phase === 'playing';
-  byId('turn-control').hidden = playing && !state.paused;
+  byId('turn-control').hidden = (playing && !state.paused) || state.phase === 'menu';
   byId('turn-control').textContent = state.paused
-    ? 'Retomar turno'
+    ? 'Voltar ao turno'
     : state.phase === 'finished'
-      ? 'Reiniciar turno'
-      : 'Iniciar turno';
+      ? 'Servir de novo'
+      : 'Abrir o bar';
+  byId('title-card').hidden = state.phase !== 'menu';
   byId('entry').hidden = state.phase !== 'menu';
   byId('service').hidden = !playing;
   byId('end').hidden = state.phase !== 'finished';
@@ -167,11 +179,15 @@ fullscreen.onclick = async () => {
   }
 };
 document.addEventListener('fullscreenchange', () => {
-  fullscreen.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia';
+  fullscreen.textContent = document.fullscreenElement ? 'Janela' : 'Tela cheia';
 });
 byId('help').onclick = () =>
   openInfo(
-    '<h2>Controles</h2><dl><dt>Desktop</dt><dd>Arraste para olhar ao redor. Clique numa garrafa da estante atrás de você, vire até o balcão e clique no copo ou na coqueteleira para dosar. Volte à estante e clique na base com o nome da bebida para guardá-la. Pegue gelo na cuba à esquerda, limão e hortelã nos potes. Para o açúcar, clique na colher, no pote e no recipiente. Para servir, clique no copo pronto e depois no cliente. Com um objeto na mão, mire no alvo e pressione E para usá-lo. Pressione Q para arremessar.</dd><dt>Preparo assistido</dt><dd>Abra Bancada para trabalhar com ingredientes e utensílios por botões. Confira o Manual e entregue pela Comanda.</dd><dt>Meta Quest 3</dt><dd>Use o grip para pegar e soltar e o gatilho para interagir. Incline a garrafa sobre o recipiente para dosar e solte o grip durante o movimento para arremessá-la. Pegue as porções nos potes ou na cuba de gelo e solte sobre o recipiente. Mergulhe a colher no açúcar e leve a colherada para dentro do recipiente. Para mexer, faça uma volta com a colher dentro do copo. Para macerar o limão com açúcar, dê duas batidas com o macerador. Para fechar a coqueteleira, pegue a tampa ao lado e solte-a sobre a boca. Pegue a tampa encaixada para abrir. Para servir, solte o grip junto à mão estendida do cliente. O comando Altura ajusta a estação à sua postura.</dd></dl>',
+    '<h2>Como servir</h2><dl>' +
+      '<dt>O pedido</dt><dd>A comanda espetada no balcão diz o drinque e o copo. O livro à direita tem a receita; toque nas páginas para folhear.</dd>' +
+      '<dt>No computador</dt><dd>Arraste para olhar. Clique num copo da prateleira para pô-lo na bancada. Clique numa garrafa (atrás de você) e depois no copo ou na coqueteleira para uma dose; clique na plaqueta da garrafa para guardá-la. Gelo, limão e hortelã saem da cuba e dos potes. Açúcar: colher, pote, copo. Macerador e colher: clique no copo. Coqueteleira: tampa sobre ela, pegue-a e aperte E para agitar, tire a tampa e clique no copo. Sirva clicando no copo e na mão do cliente. Q arremessa.</dd>' +
+      '<dt>No Quest 3</dt><dd>Grip pega e solta; o gatilho usa. Incline a garrafa sobre o copo para dosar. Solte porções sobre o copo. Mexa com uma volta da colher; macere com duas batidas. Agite a coqueteleira fechada e incline-a aberta sobre o copo. Solte o copo na mão do cliente. O medalhão Altura ajusta a bancada à sua postura.</dd>' +
+      '<dt>Sem pressa</dt><dd>Não há relógio contra você. O Caderno também permite preparar tudo por botões.</dd></dl>',
   );
 byId('credits').onclick = () =>
   openInfo(
@@ -180,7 +196,7 @@ byId('credits').onclick = () =>
 byId('sound').onclick = () => {
   const enabled = audio.toggle();
   byId('sound').setAttribute('aria-pressed', String(enabled));
-  byId('sound').textContent = enabled ? 'Som ligado' : 'Som desligado';
+  byId('sound').textContent = 'Som';
 };
 byId('total-orders').textContent = ORDERS.length + ' clientes';
 byId('event-action').onclick = () => {

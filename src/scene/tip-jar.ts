@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { group, torus, type Sign, type SignStyle, type Vec3 } from './blockout';
+import type { Panel } from '../ui/world-ui';
+import { group, torus, type Vec3 } from './blockout';
 
-type Label = (parent: THREE.Object3D, at: Vec3, w: number, h: number, style: SignStyle, rotation?: string) => Sign;
+type Label = (parent: THREE.Object3D, at: Vec3, w: number, h: number) => Panel;
 
 export function tipJar(root: THREE.Object3D, label: Label, capacity: number) {
   const jar = group(root, [0.68, 1.083, -1.08]);
@@ -24,7 +25,7 @@ export function tipJar(root: THREE.Object3D, label: Label, capacity: number) {
   for (const y of [0.009, 0.175, 0.184, 0.194]) {
     torus(jar, [0, y, 0], y < 0.02 ? 0.079 : 0.073, 0.0025, rim).rotation.x = Math.PI / 2;
   }
-  const tag = label(jar, [0, 0.114, 0.085], 0.147, 0.064, {});
+  const tag = label(jar, [0, 0.1, 0.088], 0.12, 0.07);
   const coins = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.019, 0.019, 0.0046, 16),
     new THREE.MeshStandardMaterial({ color: '#e3ae4b', metalness: 0.32, roughness: 0.42 }),
@@ -45,9 +46,6 @@ export function tipJar(root: THREE.Object3D, label: Label, capacity: number) {
   jar.add(coins);
   return (total = 0) => {
     coins.count = total;
-    tag.print({
-      lines: ['GORJETAS', total + ' moedas'], center: true, font: 0.32,
-      bg: '#eee1c1', ink: '#27271d', accent: '#493928',
-    });
+    tag.draw({ title: 'Gorjetas', note: total + (total === 1 ? ' moeda' : ' moedas') });
   };
 }

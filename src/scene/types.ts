@@ -14,6 +14,10 @@ export interface Item {
   /** Utensílios da gaveta: soltos ficam onde caem; `stow` os guarda de volta. */
   stow?: () => void;
   stowed?: boolean;
+  /** Garrafas: altura da boca acima da origem (despejo). */
+  mouth?: number;
+  /** Garrafas: raio e altura do corpo para a física (origem a 0,0945 m da base). */
+  bottle?: { radius: number; height: number };
 }
 
 export type Target = (id: string, name: string, at: Vec3, held?: boolean, parent?: THREE.Object3D) => THREE.Group;

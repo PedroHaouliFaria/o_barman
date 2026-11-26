@@ -52,6 +52,19 @@ function fixMaterials(root: THREE.Object3D) {
         });
       if (name.startsWith('vidro_lampada'))
         return physical(m, { transmission: 1, thickness: 0.001, roughness: 0.02, transparent: true, opacity: 0.4 });
+      if (name.startsWith('vidro_gelo'))
+        // gelo: claro, quase opaco no miolo, com brilho de borda
+        return physical(m, {
+          color: new THREE.Color('#e8f4f6'),
+          transparent: true,
+          opacity: 0.72,
+          roughness: 0.18,
+          clearcoat: 1,
+          clearcoatRoughness: 0.1,
+          envMapIntensity: 2,
+          emissive: new THREE.Color('#2a3a40'),
+          emissiveIntensity: 0.25,
+        });
       if (name.startsWith('vidro_copo'))
         // vidro de copo: quase só reflexo e borda, como vidro real num bar escuro
         return physical(m, {

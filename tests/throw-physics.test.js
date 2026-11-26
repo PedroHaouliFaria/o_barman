@@ -59,3 +59,15 @@ test('o fundo da gaveta aberta sustenta utensílios e os acompanha ao fechar e a
     assert.ok(Math.abs(pos.y - floor) < 0.004, 'continua no fundo');
   }
 });
+
+test('garrafas paradas na prateleira continuam nela quando outro objeto é arremessado', () => {
+  const root = new THREE.Group();
+  boxAt(root, [0, 1.472, 0.83], [4.8, 0.04, 0.3]);
+  const whisky = item('whisky', [0, 1.5885, 0.83]);
+  whisky.bottle = { radius: 0.041, height: 0.336 };
+  const spoon = item('spoon', [-0.15, 1.16, -0.66]);
+  const physics = throwPhysics(root, [whisky], () => false);
+  physics.launch(spoon, {}, new THREE.Vector3(), new THREE.Vector3());
+  settle(physics, 300);
+  assert.ok(Math.abs(whisky.obj.position.y - 1.5885) < 0.01, 'whisky na prateleira: ' + whisky.obj.position.y);
+});

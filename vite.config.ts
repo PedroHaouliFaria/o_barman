@@ -6,6 +6,11 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ mode }) => ({
   plugins: [react(), ...(mode === 'quest' ? [basicSsl()] : [])],
   server: { port: 5173 },
+  // Pré-otimiza o que só aparece depois do primeiro carregamento (modelos, simulador de Quest):
+  // sem isso o Vite recarrega a página no meio da primeira partida.
+  optimizeDeps: {
+    include: ['three/examples/jsm/loaders/GLTFLoader.js', 'iwer', '@dimforge/rapier3d-compat'],
+  },
   build: {
     target: 'es2022',
     rollupOptions: { input: { main: 'index.html', estilos: 'estilos.html' } },

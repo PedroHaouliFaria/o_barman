@@ -113,9 +113,10 @@ export function sign(
   let previous = '';
   function print({
     lines = [],
-    bg = '#183932',
-    ink = '#fff0d8',
-    accent = '#e6bb76',
+    // Placas no estilo Âmbar Noturno: madeira escura, texto creme, filete de latão.
+    bg = '#1f140d',
+    ink = '#efdcb8',
+    accent = '#c8974e',
     font = 0.12,
     center = false,
   }: SignStyle = {}) {
@@ -164,8 +165,10 @@ export function sign(
   };
 }
 
-export function room(root: THREE.Object3D) {
+export function room(root: THREE.Object3D, { visible = true }: { visible?: boolean } = {}) {
   // Estação em U aberta para o jogador. A calibração move todas as superfícies juntas.
+  // Com visible=false as caixas viram só colisores da física (o cenário vem do bar Âmbar Noturno).
+  const first = root.children.length;
   box(root, [0, -0.07, -1.55], [8, 0.12, 7], '#483d36');
   box(root, [0, 1.6, 1.5], [7, 3.3, 0.12], '#354840');
   box(root, [0, 1.6, -3.8], [7, 3.3, 0.12], '#254640');
@@ -187,6 +190,10 @@ export function room(root: THREE.Object3D) {
     box(root, [x, 1.04, -0.21], [0.58, 0.085, 0.77], '#9b7552');
   }
   box(root, [0, 1.087, -0.79], [1.18, 0.012, 0.4], '#304640');
+  if (!visible) {
+    for (const child of root.children.slice(first)) child.visible = false;
+    return (_act = 1) => {};
+  }
   for (const x of [-1.08, 1.08]) {
     cylinder(root, [x, 2.98, -2.29], 0.012, 0.49, '#4a4235');
     cone(root, [x, 2.7, -2.29], 0.075, 0.27, 0.18, '#926e46');

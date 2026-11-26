@@ -126,7 +126,7 @@ export function buildEvents({
       obj.rotation.x = Math.PI / 2;
       obj.rotation.z = Math.atan2(-0.46 * Math.cos(phase), 0.07 * Math.cos(2 * phase));
     } else if (id === 'spider') {
-      const ceiling = 3.21;
+      const ceiling = 3.38;
       thread.position.set(obj.position.x, (obj.position.y + ceiling) / 2, obj.position.z);
       thread.scale.y = ceiling - obj.position.y;
     } else {
@@ -136,6 +136,9 @@ export function buildEvents({
   }
   for (const [id, actor] of actors) draw(id, actor);
   const api = {
+    /** corpo da lesma (o rastro fica fora) e os alvos de cada bicho, para a arte trocar a malha */
+    slugBody: slug,
+    actors: Object.fromEntries([...actors].map(([id, a]) => [id, a.object])) as Record<EventId, THREE.Object3D>,
     sync(event: { ingredient: string; status: string } | null) {
       const held = event?.status === 'collected' ? event.ingredient : null;
       if (held && collected !== held) api.collect(held);

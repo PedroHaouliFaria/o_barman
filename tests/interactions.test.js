@@ -81,7 +81,7 @@ test('barata percorre a face interna do balcão entre as duas bancadas', () => {
     const pose = eventPose('cockroach', ms);
     assert.ok(Math.abs(home[0] + pose.x) < 0.65);
     assert.ok(home[1] + pose.y < 1.02);
-    assert.ok(home[2] + pose.z > -0.565);
+    assert.ok(home[2] + pose.z > -0.59, 'na frente da face interna do balcão novo (z = -0,59)');
   }
   assert.notEqual(eventPose('cockroach', 0).x, eventPose('cockroach', 3000).x);
 });

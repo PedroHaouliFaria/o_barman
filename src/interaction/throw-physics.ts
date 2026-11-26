@@ -3,7 +3,8 @@
 // Diferença: as patas articuladas dos insetos (ragdoll) ainda não foram portadas.
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
-import type { Item } from '../scene/types';
+import { BASE, glassShape } from '../scene/glass-shapes.js';
+import type { Item } from '../scene/types.ts';
 
 let ready: Promise<void> | null = null;
 export function initPhysics() {
@@ -15,7 +16,8 @@ const MASS = 0.25;
 const FRICTION = 0.48;
 const RESTITUTION = 0.19;
 
-function colliders(id: string, state: any): RAPIER.ColliderDesc[] {
+function colliders(item: Item, state: any): RAPIER.ColliderDesc[] {
+  const id = item.id;
   const out: RAPIER.ColliderDesc[] = [];
   // Rapier usa cilindros retos; cones truncados viram cilindros de raio médio.
   const cylinder = (top: number, bottom: number, height: number, y = 0) =>
@@ -27,9 +29,8 @@ function colliders(id: string, state: any): RAPIER.ColliderDesc[] {
     cylinder(r, r, 0.17);
     out.push(RAPIER.ColliderDesc.ball(id === 'spoon' ? 0.025 : 0.04).setTranslation(0, id === 'spoon' ? 0.079 : -0.077, 0));
   } else if (id === 'glass') {
-    const rocks = state.glass.type === 'rocks';
-    const radius = ({ highball: 0.048, rocks: 0.068, coupe: 0.081, mug: 0.068 } as Record<string, number>)[state.glass.type];
-    cylinder(radius, radius, rocks ? 0.112 : 0.164, rocks ? -0.026 : 0);
+    const { radius, height } = glassShape(state.glass.type);
+    cylinder(radius, radius, height, BASE + height / 2);
   } else if (id === 'shaker') {
     cylinder(0.067, 0.067, 0.22);
     if (state.shaker.closed) cylinder(0.033, 0.067, 0.06, 0.142);
@@ -37,7 +38,13 @@ function colliders(id: string, state: any): RAPIER.ColliderDesc[] {
   else if (id === 'lime') out.push(RAPIER.ColliderDesc.ball(0.043));
   else if (id === 'ice') out.push(RAPIER.ColliderDesc.cuboid(0.035, 0.035, 0.035));
   else if (['mint', 'cockroach', 'spider', 'slug_slime'].includes(id)) out.push(RAPIER.ColliderDesc.cuboid(0.032, 0.012, 0.042));
-  else {
+  else if (item.bottle) {
+    // Garrafa do Blender: corpo + gargalo; a base fica 0,0945 m abaixo da origem.
+    const { radius, height } = item.bottle;
+    const body = height * 0.62;
+    cylinder(radius, radius, body, -0.0945 + body / 2);
+    cylinder(radius * 0.42, radius * 0.42, height - body, -0.0945 + body + (height - body) / 2);
+  } else {
     cylinder(0.049, 0.049, 0.165, -0.012);
     cylinder(0.025, 0.025, 0.072, 0.099);
   }
@@ -96,7 +103,7 @@ export function throwPhysics(
       .setCcdEnabled(true)
       .setSleeping(sleeping);
     const body = world.createRigidBody(desc);
-    for (const c of colliders(item.id, state)) world.createCollider(c, body);
+    for (const c of colliders(item, state)) world.createCollider(c, body);
     return body;
   }
   function remove(item: Item) {
@@ -143,7 +150,10 @@ export function throwPhysics(
     // Garrafas paradas acordam com o impacto; a que está numa mão segue o rastreamento.
     for (const bottle of bottles) {
       if (bottle === item || bodies.has(bottle) || isHeld(bottle)) continue;
-      bodies.set(bottle, makeBody(bottle, state, true));
+      // Acordadas: um corpo criado dormindo não gera contato com a prateleira e atravessa
+      // a tábua quando algo o acorda (achado no ensaio de VR, 26/11/2026). Elas assentam em
+      // 2 mm e dormem sozinhas.
+      bodies.set(bottle, makeBody(bottle, state, false));
     }
     remove(item);
     const body = makeBody(item, state);

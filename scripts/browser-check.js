@@ -45,10 +45,9 @@ try {
   await page.waitForFunction(() => !document.querySelector('#start').disabled, {}, { timeout: 30000 });
   const layout = await page.evaluate(() => {
     const canvas = document.querySelector('.stage canvas').getBoundingClientRect();
-    const header = document.querySelector('header').getBoundingClientRect();
-    return { full: Math.abs(canvas.width - innerWidth) < 1 && Math.abs(canvas.top - header.bottom) < 1 && Math.abs(canvas.bottom - innerHeight) < 1 };
+    return { full: Math.abs(canvas.width - innerWidth) < 1 && Math.abs(canvas.top) < 1 && Math.abs(canvas.bottom - innerHeight) < 1 };
   });
-  assert.ok(layout.full, 'A cena ocupa a janela abaixo da barra superior');
+  assert.ok(layout.full, 'A cena ocupa a janela inteira');
   await shot('entrada');
 
   // ---- Os 9 pedidos pelos objetos 3D (mouse e tecla E) ----
@@ -138,7 +137,8 @@ try {
     await shot('3d-' + name.toLowerCase().replace(/\W+/g, '-'));
   };
 
-  await click('turn-control');
+  await click('start');
+  assert.ok(await page.locator('#title-card').isHidden(), 'A tela de abertura some ao abrir o bar');
   // 1 Cuba Libre
   await chooseGlass('highball');
   for (const bottle of ['rum', 'cola']) await pour(bottle, 'glass');
@@ -209,18 +209,28 @@ try {
 
   // ---- Arremesso (Q) com física Rapier ----
   await clickItem('spoon');
+  await page.evaluate(() => window.__barman.station.lookAt([0, 1.75, -3]));
   const before = await page.evaluate(() => window.__barman.game.state.phase);
   assert.equal(before, 'playing');
   const held = await page.evaluate(() => window.__barman.station.where('spoon'));
   await page.keyboard.press('KeyQ');
-  await page.waitForTimeout(400);
-  const flying = await page.evaluate(() => window.__barman.station.where('spoon'));
-  await page.waitForTimeout(3000);
-  const rest = await page.evaluate(() => window.__barman.station.where('spoon'));
-  await page.waitForTimeout(500);
-  const still = await page.evaluate(() => window.__barman.station.where('spoon'));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  const spoonAt = () => page.evaluate(() => window.__barman.station.where('spoon'));
+  // Sem GPU a física anda em câmera lenta: espera pelo movimento, não por um tempo fixo.
+  let flying = held;
+  for (let i = 0; i < 40 && dist(held, flying) <= 0.3; i++) {
+    await page.waitForTimeout(250);
+    flying = await spoonAt();
+  }
   assert.ok(dist(held, flying) > 0.3, 'A colher voou: ' + JSON.stringify([held, flying]));
+  let rest = await spoonAt(),
+    still = rest;
+  for (let i = 0; i < 60; i++) {
+    await page.waitForTimeout(700);
+    still = await spoonAt();
+    if (dist(rest, still) < 0.005) break;
+    rest = still;
+  }
   assert.ok(rest.y > -0.05 && rest.y < 1.3, 'A colher caiu sobre uma superfície: ' + JSON.stringify(rest));
   assert.ok(dist(rest, still) < 0.01, 'A colher repousou');
   console.log('Arremesso: ok');

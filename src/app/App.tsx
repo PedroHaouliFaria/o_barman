@@ -79,10 +79,14 @@ interface Props {
 export function App(props: Props) {
   return (
     <Canvas
-      flat
-      gl={{ antialias: true, alpha: false }}
+      shadows="soft"
+      gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       camera={{ position: [0, 1.6, 0], fov: 80, near: 0.005, far: 100 }}
-      onCreated={({ gl }) => gl.setClearColor('#343e37')}
+      onCreated={({ gl }) => {
+        gl.setClearColor('#0b0807');
+        // ?leve (testes no simulador sem GPU): menos pixels por olho.
+        if (new URLSearchParams(location.search).has('leve')) gl.xr.setFramebufferScaleFactor(0.2);
+      }}
     >
       <XR store={xrStore}>
         <DesktopLook />

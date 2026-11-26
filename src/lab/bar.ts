@@ -24,9 +24,23 @@ export interface BarScene {
   tableFigures: THREE.Object3D[];
   /** pianista provisório (de costas, no banco do piano) */
   pianistFigure: THREE.Object3D;
+  /** garrafas decorativas da estante (o jogo esconde as que ficam onde estão as garrafas jogáveis) */
+  shelfBottles: THREE.Object3D[];
+  /** luzes das luminárias do balcão (o jogo mantém só estas no Quest) */
+  pendantLights: THREE.PointLight[];
 }
 
-export function buildBar(style: StyleDef): BarScene {
+/**
+ * Opções do jogo (src/scene/art-bar.ts). O laboratório usa o padrão.
+ * - `game`: sem cliente provisório e sem copos/garrafas decorativos na bancada de trabalho.
+ * - `shelfShift`: aproxima a estante do bartender (metros em Z; negativo = mais perto), para alcançar em VR.
+ */
+export interface BarOptions {
+  game?: boolean;
+  shelfShift?: number;
+}
+
+export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
   const root = new THREE.Group();
   root.name = 'bar';
   const animators: ((t: number, dt: number) => void)[] = [];
@@ -104,18 +118,19 @@ export function buildBar(style: StyleDef): BarScene {
     ring.rotation.x = Math.PI / 2;
     slots.models.push({ holder: s, key: 'banqueta', placeholders: [...s.children] });
   }
-  // copos e garrafas na bancada
-  for (const [x, z, h, kind] of [
+  // copos e garrafas na bancada (no jogo a bancada é do jogador)
+  for (const [x, z, h, kind] of (options.game ? [] : [
     [-0.18, -0.74, 0.16, 'highball'], [0.12, -0.7, 0.11, 'rocks'], [0.4, -0.86, 0.13, 'coupe'],
     [-0.45, -0.9, 0.3, 'garrafa:rum'], [-0.62, -0.78, 0.2, 'garrafa:cola'], [0.66, -0.72, 0.2, 'garrafa:lemon_juice'],
-  ] as [number, number, number, string][]) {
+  ]) as [number, number, number, string][]) {
     const g = group(root, [x, 1.092, z]);
     mesh(g, cyl(0.04, 0.035, h, 14), 'bottle', [0, h / 2, 0], 0, '#9fb8b0');
     slots.glasses.push({ group: g, kind });
   }
 
   // ---------------- estante atrás do jogador ----------------
-  const back = group(root, [0, 0, 1.25]);
+  const backWrap = group(root, [0, 0, options.shelfShift ?? 0]);
+  const back = group(backWrap, [0, 0, 1.25]);
   box(back, [5.2, 1.0, 0.5], [0, 0.5, 0], 'woodDark');
   box(back, [5.3, 0.06, 0.56], [0, 1.03, 0], 'counterTop');
   mesh(back, new THREE.PlaneGeometry(4.6, 1.5), 'mirror', [0, 2.0, 0.38], Math.PI);
@@ -136,7 +151,7 @@ export function buildBar(style: StyleDef): BarScene {
     }
   }
 
-  slots.models.push({ holder: root, key: 'estante', placeholders: back.children.filter((c) => !slots.shelf.includes(c as THREE.Group)) });
+  slots.models.push({ holder: backWrap, key: 'estante', placeholders: back.children.filter((c) => !slots.shelf.includes(c as THREE.Group)) });
 
   // ---------------- luminárias sobre o balcão ----------------
   const flickers: { light: THREE.Light; base: number; seed: number }[] = [];
@@ -240,7 +255,8 @@ export function buildBar(style: StyleDef): BarScene {
   }
   // cliente no balcão em frente ao jogador + dois no balcão
   let frontCustomer: THREE.Object3D = root;
-  {
+  if (options.game) frontCustomer = new THREE.Group();
+  else {
     const front = figure(style, { seated: false, outfit: 0 });
     add(root, front.root, [0, 0, -1.55], Math.PI);
     frontCustomer = front.root;
@@ -434,6 +450,8 @@ export function buildBar(style: StyleDef): BarScene {
     frontCustomer,
     tableFigures,
     pianistFigure: pianist.root,
+    shelfBottles: slots.shelf,
+    pendantLights: slots.pendants.map((p) => p.light),
     applyAssets,
     door,
     pianoAnchor,

@@ -6,6 +6,8 @@ import { group, sphere } from '../scene/blockout';
 import type { Action, Item, Result } from '../scene/types';
 import { muddleStep, newMotion, pourStep, resetShake, shakeStep, stirStep } from './motion.js';
 import { throwPhysics } from './throw-physics';
+import { GESTURE_SLACK, glassShape } from '../scene/glass-shapes.js';
+import { restingSurfaceAt, settleHeight } from './bottle-placement.js';
 
 type Motion = ReturnType<typeof newMotion>;
 const isIngredient = (id: string): id is keyof typeof INGREDIENTS => Object.hasOwn(INGREDIENTS, id);
@@ -115,9 +117,12 @@ export function bindControls(o: ControlsOptions) {
     ray.near = 0.02;
     ray.far = 6;
     ray.setFromCamera(pointer, o.camera());
-    return fromRay();
+    return fromRay(desktop);
   }
   function canTarget(hand: Holder | undefined, item: Item) {
+    // Com algo na mão, as outras garrafas não são alvo (não se usa garrafa em garrafa):
+    // a mira atravessa a fileira da frente até a plaqueta de trás.
+    if (hand?.held && hand.held !== item && kindOf(item.id) === 'liquid') return false;
     const owner = holders().find((h) => h.held === item);
     return !owner || (owner !== hand && Boolean(hand?.held) && ['glass', 'shaker'].includes(item.id));
   }
@@ -383,7 +388,7 @@ export function bindControls(o: ControlsOptions) {
     for (const id of ids) {
       const item = items.get(id);
       if (!item?.obj.visible) continue;
-      dest.set(0, id === 'glass' ? 0.082 : id === 'shaker' ? 0.112 : 0, 0);
+      dest.set(0, id === 'glass' ? glassShape(session.state.glass.type).rim : id === 'shaker' ? 0.112 : 0, 0);
       item.obj.localToWorld(dest);
       const d = dest.distanceTo(point);
       if (d < closest) {
@@ -403,7 +408,55 @@ export function bindControls(o: ControlsOptions) {
     else if (id === 'glass') target = closeTarget(hand, ['receiving-hand', 'tray', 'sink'], 0, 0.19);
     else if (id === 'shaker') target = closeTarget(hand, ['sink'], 0, 0.19);
     if (target) operate(hand, target, true);
-    else throwItem(hand, hand.velocity, hand.spin);
+    else if (!setDown(hand)) throwItem(hand, hand.velocity, hand.spin);
+  }
+  /**
+   * Assistência de pouso (boa prática de VR): soltar devagar um recipiente ou garrafa
+   * logo acima de uma bancada ou prateleira o assenta em pé ali, sem tombar nem quicar.
+   * Soltar em movimento continua sendo arremesso.
+   */
+  function setDown(hand: Hand) {
+    const item = hand.held!;
+    const base = settleHeight(item.id, kindOf(item.id), session.state);
+    if (base === null || hand.velocity.length() > 0.9) return false;
+    item.obj.getWorldPosition(point);
+    root.worldToLocal(point);
+    const surface = restingSurfaceAt({ x: point.x, y: point.y - base, z: point.z });
+    if (surface === null || surface < 0.5 || point.y - base - surface > 0.3) return false;
+    item.obj.position.set(point.x, surface + base + 0.002, point.z);
+    // Não deixa dois objetos ocupando o mesmo lugar: afasta do vizinho na mesma superfície.
+    const radius = (it: Item) => (it.id === 'glass' ? glassShape(session.state.glass.type).radius + 0.01 : it.id === 'shaker' ? 0.072 : (it.bottle?.radius ?? 0.05) + 0.004);
+    for (let pass = 0; pass < 3; pass++) {
+      for (const other of items.values()) {
+        if (other === item || !other.obj.visible || !(other.id === 'glass' || other.id === 'shaker' || kindOf(other.id) === 'liquid')) continue;
+        if (holders().some((h) => h.held === other)) continue;
+        other.obj.getWorldPosition(dest);
+        root.worldToLocal(dest);
+        if (Math.abs(dest.y - item.obj.position.y) > 0.15) continue;
+        const dx = item.obj.position.x - dest.x,
+          dz = item.obj.position.z - dest.z;
+        const gap = Math.hypot(dx, dz);
+        const need = radius(item) + radius(other);
+        if (gap >= need) continue;
+        const ux = gap > 1e-4 ? dx / gap : 1,
+          uz = gap > 1e-4 ? dz / gap : 0;
+        item.obj.position.x = dest.x + ux * need;
+        item.obj.position.z = dest.z + uz * need;
+      }
+    }
+    // Fica em pé, mantendo só o giro em torno do eixo vertical.
+    const yaw = new THREE.Euler().setFromQuaternion(item.obj.quaternion, 'YXZ').y;
+    item.obj.quaternion.setFromEuler(new THREE.Euler(0, yaw, 0, 'YXZ'));
+    physics.remove(item);
+    if (item.id === 'glass') items.get('receiving-hand')!.obj.visible = false;
+    hand.held = null;
+    hand.trackedSpecial = false;
+    hand.triggerItem = null;
+    hand.motion = newMotion();
+    hand.sampled = false;
+    flow.visible = false;
+    feedback(item.name + ' na bancada.');
+    return true;
   }
   function tipIn(id: string) {
     return items.get(id)!.obj.worldToLocal(dest.copy(point));
@@ -420,9 +473,8 @@ export function bindControls(o: ControlsOptions) {
         feedback('Colher com uma porção de açúcar.');
       }
     }
-    const rim = glass.type === 'rocks' ? 0.03 : 0.082;
-    const radius = ({ highball: 0.048, rocks: 0.068, mug: 0.068, coupe: 0.081 } as Record<string, number>)[glass.type];
-    const bottom = glass.type === 'coupe' ? 0.016 : -0.082;
+    const { rim, bottom, radius: inner } = glassShape(glass.type);
+    const radius = inner + GESTURE_SLACK;
     const tip = tipIn('glass');
     const aligned = Math.hypot(tip.x, tip.z) < radius && tip.y >= bottom;
     const inside = aligned && tip.y <= rim;
@@ -453,7 +505,7 @@ export function bindControls(o: ControlsOptions) {
     const isShaker = item.id === 'shaker';
     if (kind === 'liquid' || isShaker) {
       const { glass, shaker } = session.state;
-      const mouth = isShaker ? 0.112 : 0.135;
+      const mouth = isShaker ? 0.112 : item.mouth ?? 0.135;
       const ready =
         !isShaker ||
         (!shaker.closed && Object.keys(shaker.ingredients).length > 0 && Object.keys(glass.ingredients).length === 0);
@@ -466,7 +518,7 @@ export function bindControls(o: ControlsOptions) {
         point.set(0, mouth, 0);
         item.obj.localToWorld(point);
         root.worldToLocal(point);
-        dest.set(0, target.id === 'glass' ? 0.082 : 0.112, 0);
+        dest.set(0, target.id === 'glass' ? glassShape(glass.type).rim : 0.112, 0);
         target.obj.localToWorld(dest);
         root.worldToLocal(dest);
         delta.subVectors(dest, point);
@@ -743,6 +795,9 @@ export function bindControls(o: ControlsOptions) {
 
   return {
     frame,
+    /** Estado das mãos para diagnóstico nos ensaios. */
+    debugHands: () =>
+      hands.map((h) => ({ side: h.side, visible: h.el.visible, held: h.held?.id ?? null, speed: h.velocity.length(), motion: { ...h.motion }, pos: h.el.position.toArray() })),
     releaseAll,
     restoreThrown,
     /** Novo cliente: o copo volta à bancada (fica invisível até ser pego na estante). */

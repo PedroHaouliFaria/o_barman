@@ -2,6 +2,12 @@ import * as THREE from 'three';
 import { GLASSES, INGREDIENTS } from '../domain/game.js';
 import type { Sign, SignStyle, Vec3 } from './blockout';
 
+const techniques: Record<string, { target: VesselId; text: string }> = {
+  muddle: { target: 'glass', text: 'Macerado' },
+  stir: { target: 'glass', text: 'Mexido' },
+  shake: { target: 'shaker', text: 'Batido' },
+};
+
 type Label = (parent: THREE.Object3D, at: Vec3, w: number, h: number, style: SignStyle, rotation?: string) => Sign;
 type VesselId = 'glass' | 'shaker';
 interface Holder {
@@ -46,7 +52,7 @@ export function vesselFeedback({
   function render(state: any, reset: boolean) {
     for (const [id, panel] of Object.entries(panels) as [VesselId, Panel][]) {
       const vessel = state[id];
-      panel.hideContents = id === 'glass' && vessel.returned;
+      panel.hideContents = id === 'glass' && (!vessel.type || vessel.returned);
       if (panel.hideContents) {
         panel.until = 0;
         continue;
@@ -61,9 +67,15 @@ export function vesselFeedback({
     }
   }
 
-  function added(action: { target: VesselId; ingredient: keyof typeof INGREDIENTS }) {
-    const panel = panels[action.target];
-    panel.receipt.print({ lines: ['+1  ' + INGREDIENTS[action.ingredient].name], center: true, font: 0.45 });
+  /** Recibo curto sobre o recipiente: "+1 Rum", "Macerado", "Mexido", "Batido". */
+  function confirmPreparation(action: { type: string; target?: VesselId; ingredient?: keyof typeof INGREDIENTS }) {
+    const receipt =
+      action.type === 'add' && action.target && action.ingredient
+        ? { target: action.target, text: '+1  ' + INGREDIENTS[action.ingredient].name }
+        : techniques[action.type];
+    if (!receipt) return;
+    const panel = panels[receipt.target];
+    panel.receipt.print({ lines: [receipt.text], center: true, font: 0.45 });
     panel.until = performance.now() + 1600;
   }
 
@@ -113,5 +125,5 @@ export function vesselFeedback({
     }
     desktopList.hidden = !showDesktopList;
   }
-  return { render, added, frame, destroy: () => desktopList.remove() };
+  return { render, confirmPreparation, frame, destroy: () => desktopList.remove() };
 }

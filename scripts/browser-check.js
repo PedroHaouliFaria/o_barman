@@ -1,6 +1,6 @@
-// Ensaio de navegador da v2 (React Three Fiber): serve o jogo com Vite, joga o
-// primeiro pedido pelos objetos 3D, os outros oito pelo Caderno, testa o
-// arremesso com Rapier e o reinício. Uso: npm run test:browser
+// Ensaio de navegador da v2 (React Three Fiber): serve o jogo com Vite, joga os
+// 9 pedidos pelos objetos 3D, testa o arremesso com Rapier, reinicia e joga os
+// 9 de novo pelo Caderno. Uso: npm run test:browser
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -51,7 +51,7 @@ try {
   assert.ok(layout.full, 'A cena ocupa a janela abaixo da barra superior');
   await shot('entrada');
 
-  // ---- Pedido 1 inteiro pelos objetos 3D (mouse) ----
+  // ---- Os 9 pedidos pelos objetos 3D (mouse e tecla E) ----
   const clickItem = async (id, look = id) => {
     await page.evaluate((key) => window.__barman.station.lookAt(key), look);
     await page.waitForTimeout(120);
@@ -61,25 +61,151 @@ try {
     await page.mouse.click(p.x, p.y);
     await page.waitForTimeout(120);
   };
-  await click('turn-control');
-  for (const bottle of ['rum', 'cola']) {
+  const expect = async (pattern, what) => assert.match(await feedback(), pattern, what);
+  // Olha para o teto e clica: nenhum objeto sob o mouse.
+  const clickEmpty = async () => {
+    await page.evaluate(() => window.__barman.station.lookAt([0, 3.2, -1.2]));
+    await page.waitForTimeout(100);
+    await page.mouse.move(720, 470);
+    await page.mouse.click(720, 470);
+    await page.waitForTimeout(120);
+  };
+  const state = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__barman.game.state)));
+  const chooseGlass = async (type) => {
+    await clickItem('choose-' + type);
+    assert.equal((await state()).glass.type, type, 'copo escolhido na estante');
+  };
+  const pour = async (bottle, into) => {
     await clickItem(bottle);
-    assert.match(await feedback(), /em mãos/);
-    await clickItem('glass');
-    assert.match(await feedback(), /no copo/);
+    await expect(/em mãos/);
+    await clickItem(into);
+    await expect(into === 'glass' ? /no copo/ : /na coqueteleira/, bottle + ' em ' + into);
     await clickItem('slot-' + bottle);
-    assert.match(await feedback(), /no seu lugar/);
-  }
-  await clickItem('bin-lime');
-  await clickItem('glass');
-  await clickItem('bin-ice');
-  await clickItem('glass');
-  assert.match(await feedback(), /Gelo no copo/);
-  await clickItem('glass');
-  await clickItem('receiving-hand');
-  assert.match(await feedback(), /Cuba Libre aprovado/);
-  await shot('cuba-libre-aprovado');
-  console.log('Pedido 1 pelos objetos 3D: ok');
+    await expect(/no seu lugar/);
+  };
+  const portion = async (id, into) => {
+    await clickItem('bin-' + id);
+    await clickItem(into);
+    await expect(into === 'glass' ? /no copo/ : /na coqueteleira/, id + ' em ' + into);
+  };
+  const sugar = async (into) => {
+    await clickItem('spoon');
+    await clickItem('sugar');
+    await expect(/porção de açúcar/);
+    await clickItem(into);
+    await expect(/Açúcar/);
+  };
+  const muddle = async () => {
+    await clickItem('pestle');
+    await clickItem('glass');
+    await expect(/macerados/);
+  };
+  const stir = async () => {
+    await clickItem('spoon');
+    await clickItem('glass');
+    await expect(/mexidos/);
+  };
+  const special = async (id, into = 'glass') => {
+    await clickItem('event-' + id);
+    await expect(/em mãos/, 'coletou ' + id);
+    await clickItem(into);
+    await expect(/no copo|na coqueteleira/, id + ' depositado');
+  };
+  const shakeAndTransfer = async () => {
+    await clickItem('lid');
+    await clickItem('shaker');
+    await expect(/fechada/);
+    await clickItem('shaker');
+    await page.evaluate(() => window.__barman.station.lookAt([0, 3.2, -1.2]));
+    await page.mouse.move(720, 470);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(120);
+    await expect(/agitada/);
+    await clickEmpty();
+    await clickItem('lid', 'shaker');
+    await expect(/aberta|em mãos/);
+    await clickEmpty();
+    assert.equal((await state()).shaker.closed, false, 'tampa aberta');
+    await clickItem('shaker');
+    await clickItem('glass');
+    await expect(/transferido/);
+    await clickEmpty();
+  };
+  const serve3d = async (name) => {
+    await clickItem('glass');
+    await clickItem('receiving-hand');
+    await expect(new RegExp(name + ' aprovado'), 'entrega de ' + name);
+    await shot('3d-' + name.toLowerCase().replace(/\W+/g, '-'));
+  };
+
+  await click('turn-control');
+  // 1 Cuba Libre
+  await chooseGlass('highball');
+  for (const bottle of ['rum', 'cola']) await pour(bottle, 'glass');
+  await portion('lime', 'glass');
+  await portion('ice', 'glass');
+  await serve3d('Cuba Libre');
+  // 2 Caipirinha
+  await chooseGlass('rocks');
+  await portion('lime', 'glass');
+  await sugar('glass');
+  await muddle();
+  await pour('cachaca', 'glass');
+  await portion('ice', 'glass');
+  await serve3d('Caipirinha');
+  // 3 Whiskey Sour
+  await chooseGlass('coupe');
+  for (const bottle of ['whisky', 'lemon_juice', 'sugar_syrup']) await pour(bottle, 'shaker');
+  await portion('ice', 'shaker');
+  await shakeAndTransfer();
+  await serve3d('Whiskey Sour');
+  // 4 Margarita
+  await chooseGlass('coupe');
+  for (const bottle of ['tequila', 'orange_liqueur', 'lemon_juice']) await pour(bottle, 'shaker');
+  await portion('ice', 'shaker');
+  await shakeAndTransfer();
+  await serve3d('Margarita');
+  // 5 Negroni com barata
+  await chooseGlass('rocks');
+  for (const bottle of ['gin', 'campari', 'sweet_vermouth']) await pour(bottle, 'glass');
+  await portion('ice', 'glass');
+  await special('cockroach');
+  await stir();
+  await serve3d('Negroni com barata');
+  // 6 Mojito
+  await chooseGlass('highball');
+  await portion('lime', 'glass');
+  await sugar('glass');
+  await muddle();
+  await pour('rum', 'glass');
+  await portion('mint', 'glass');
+  await pour('soda_water', 'glass');
+  await portion('ice', 'glass');
+  await serve3d('Mojito');
+  // 7 Dry Martini
+  await chooseGlass('coupe');
+  for (const bottle of ['gin', 'dry_vermouth']) await pour(bottle, 'glass');
+  await portion('ice', 'glass');
+  await stir();
+  await serve3d('Dry Martini');
+  // 8 Moscow Mule com gosma
+  await chooseGlass('mug');
+  for (const bottle of ['vodka', 'ginger_beer', 'lemon_juice']) await pour(bottle, 'glass');
+  await portion('ice', 'glass');
+  await special('slug_slime');
+  await serve3d('Moscow Mule com gosma');
+  // 9 Martini com aranha
+  await chooseGlass('coupe');
+  for (const bottle of ['gin', 'dry_vermouth']) await pour(bottle, 'glass');
+  await portion('ice', 'glass');
+  await special('spider');
+  await stir();
+  await serve3d('Martini com aranha');
+  assert.equal((await state()).phase, 'finished');
+  console.log('Os 9 pedidos pelos objetos 3D: ok');
+  await click('turn-control');
+  assert.equal((await state()).phase, 'playing');
+  await chooseGlass('highball');
 
   // ---- Arremesso (Q) com física Rapier ----
   await clickItem('spoon');
@@ -99,7 +225,7 @@ try {
   assert.ok(dist(rest, still) < 0.01, 'A colher repousou');
   console.log('Arremesso: ok');
 
-  // ---- Pedidos 2 a 9 pelo Caderno (preparo assistido) ----
+  // ---- Pedidos 1 a 9 pelo Caderno (preparo assistido), depois de reiniciar ----
   await click('open-notebook');
   const tab = (name) => page.locator('[data-page="' + name + '"]').click();
   const command = (name) => page.locator('[data-command="' + name + '"]').click();
@@ -122,6 +248,10 @@ try {
     assert.match(await feedback(), new RegExp(name + ' aprovado'));
   };
   const glass = (type) => page.selectOption('#glass-type', type);
+  // Pedido 1 já vem com o copo do reinício; volta a ele antes de seguir pelo Caderno.
+  await tab('bench');
+  await add('glass', 'rum', 'cola', 'lime', 'ice');
+  await deliver('Cuba Libre');
   const shake = async () => {
     await command('toggleLid');
     await command('shake');
@@ -179,7 +309,7 @@ try {
   await deliver('Martini com aranha');
   assert.equal(await page.evaluate(() => window.__barman.game.state.phase), 'finished');
   assert.ok(await page.locator('#end').isVisible());
-  console.log('Pedidos 2 a 9 pelo Caderno: ok');
+  console.log('Os 9 pedidos pelo Caderno: ok');
   await command('restart');
   assert.equal(await page.evaluate(() => window.__barman.game.state.orderIndex), 0);
   console.log('Reinício: ok');

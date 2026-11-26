@@ -7,6 +7,7 @@ import { bindControls } from '../interaction/controls';
 import { box, cone, customer, cylinder, group, rotate, room, sign, sphere, torus, type Sign, type SignStyle, type Vec3 } from './blockout';
 import { buildEvents, specimen } from './environment';
 import { tipJar } from './tip-jar';
+import { toolDrawer } from './tool-drawer';
 import type { Action, Item, Result } from './types';
 import { vesselFeedback } from './vessel-feedback';
 
@@ -64,6 +65,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   const manual = group(root, [0.99, 1.085, -0.12]);
   rotate(manual, '0 -88 0');
   box(manual, [0, 0.12, 0], [0.3, 0.24, 0.12], '#694c35');
+  const toggleDrawer = toolDrawer(target, items);
   const book = group(manual, [0, 0.25, 0]);
   rotate(book, '-48 0 0');
   box(book, [0, 0, 0], [0.69, 0.36, 0.027], '#583626');
@@ -211,7 +213,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     const el = target(id, name, at);
     return label(el, [0, 0, 0], w, 0.081, { lines, center: true, font: 0.35 }, rotation);
   }
-  const glassType = button('type', 'Trocar tipo de copo', [0.16, 1.14, -0.63], 0.18, ['TIPO DE COPO']);
+  const glassType = label(root, [0.16, 1.14, -0.63], 0.18, 0.081, {}, '-40 0 0');
   const toggle = button('pause', 'Turno / pausa', [-1.15, 1.69, -1.21], 0.21, ['INICIAR'], '0 20 0');
   button('height', 'Ajustar altura', [-1.15, 1.58, -1.21], 0.21, ['ALTURA'], '0 20 0');
 
@@ -269,6 +271,10 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     feedback('Altura da bancada ajustada à posição atual.');
   }
   function activate(id: string) {
+    if (id === 'drawer') {
+      toggleDrawer(controls.moveDrawer);
+      return true;
+    }
     if (id === 'height') {
       recenter();
       return true;
@@ -280,16 +286,6 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     }
     if (id === 'pause') {
       act({ type: lastState.phase === 'menu' ? 'start' : lastState.phase === 'finished' ? 'restart' : 'togglePause' });
-      return true;
-    }
-    if (lastState.paused || lastState.phase !== 'playing') return false;
-    if (id.startsWith('choose-')) {
-      act({ type: 'selectGlass', glass: id.slice(7) });
-      return true;
-    }
-    if (id === 'type') {
-      const keys = Object.keys(GLASSES);
-      act({ type: 'selectGlass', glass: keys[(keys.indexOf(lastState.glass.type) + 1) % keys.length] });
       return true;
     }
     return false;
@@ -325,6 +321,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       if (newSession) controls.restoreThrown();
     }
     if (changed) {
+      controls.clearGlass();
       drawCustomer(state.orderIndex, state.phase === 'playing');
       illuminate(session.order?.act ?? (state.phase === 'finished' ? ORDERS.at(-1)!.act : 1));
       clock.print({ lines: [session.time], font: 0.57, center: true });
@@ -352,8 +349,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       center: true,
       font: 0.35,
     });
+    glass.visible = Boolean(state.glass.type);
     glassType.print({
-      lines: ['COPO · ' + GLASSES[state.glass.type as keyof typeof GLASSES].toUpperCase()],
+      lines: [state.glass.type ? 'COPO · ' + GLASSES[state.glass.type as keyof typeof GLASSES].toUpperCase() : 'SEM COPO'],
       font: 0.3,
       center: true,
     });
@@ -383,7 +381,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     render,
     recenter,
     frame: controls.frame,
-    ingredientAdded: contents.added,
+    confirmPreparation: contents.confirmPreparation,
     selectPage,
     /** Posição de um objeto na tela (px no canvas). Usado pelos testes de navegador. */
     locate(id: string) {
@@ -400,9 +398,12 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       return { x: p.x, y: p.y, z: p.z };
     },
     /** Gira a câmera desktop para olhar um objeto. Usado pelos testes de navegador. */
-    lookAt(id: string) {
+    lookAt(id: string | [number, number, number]) {
       const camera = ctx.camera();
-      const target = items.get(id)!.obj.getWorldPosition(new THREE.Vector3());
+      const target =
+        typeof id === 'string'
+          ? items.get(id)!.obj.getWorldPosition(new THREE.Vector3())
+          : root.localToWorld(new THREE.Vector3(...id));
       camera.lookAt(target);
       camera.updateMatrixWorld(true);
     },

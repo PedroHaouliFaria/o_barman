@@ -78,7 +78,12 @@ export function bindControls(o: ControlsOptions) {
   const portions = new Set(['lime', 'ice', 'mint']);
   const portionAtRest = new Map([...portions].map((id) => [id, items.get(id)!.obj.visible]));
   const bottles = [...items.values()].filter((item) => kindOf(item.id) === 'liquid');
-  const physics = throwPhysics(root, bottles, (item) => holders().some((hand) => hand.held === item));
+  const physics = throwPhysics(
+    root,
+    bottles,
+    (item) => holders().some((hand) => hand.held === item),
+    items.get('drawer')?.obj,
+  );
   const change = new THREE.Quaternion();
   const sugarDose = items.get('spoon')!.obj.getObjectByName('sugar-dose');
   let spoonLoaded = false;
@@ -146,6 +151,8 @@ export function bindControls(o: ControlsOptions) {
   function resetItem(holder: Holder) {
     const item = holder.held;
     if (!item) return;
+    // Utensílios da gaveta não voltam sozinhos: caem de onde estão.
+    if (item.stow) return throwItem(holder, delta.set(0, 0, 0), axis.set(0, 0, 0));
     item.obj.position.copy(item.home);
     if (item.homeQuaternion) item.obj.quaternion.copy(item.homeQuaternion);
     else item.obj.quaternion.identity();
@@ -170,10 +177,26 @@ export function bindControls(o: ControlsOptions) {
       item.obj.quaternion.copy(item.homeQuaternion ?? quaternion.identity());
       if (portions.has(item.id)) item.obj.visible = portionAtRest.get(item.id)!;
       if (isSpecial(item.id)) item.obj.visible = false;
+      item.stow?.();
     }
   }
   function pick(holder: Holder, target: Item | null) {
     let item = target;
+    // Os modelos na estante são a fonte do copo: pegar um deles põe esse copo vazio na mão.
+    if (item?.id.startsWith('choose-')) {
+      if (session.state.phase === 'menu') act({ type: 'start' });
+      const glass = items.get('glass')!;
+      if (holders().some((h) => h.held === glass)) return;
+      if (!live() || !act({ type: 'selectGlass', glass: item.id.slice(7) }).ok) return;
+      physics.remove(glass);
+      if (holder.isMouse) {
+        // No desktop o copo escolhido vai direto para o lugar dele na bancada.
+        glass.obj.position.copy(glass.home);
+        glass.obj.quaternion.identity();
+        return;
+      }
+      item = glass;
+    }
     const source = item?.id.startsWith('event-') ? item : null;
     if (source) item = items.get(source.id.slice(6)) ?? null;
     if (item?.id.startsWith('bin-')) item = items.get(item.id.slice(4)) ?? null;
@@ -210,6 +233,7 @@ export function bindControls(o: ControlsOptions) {
     holder.spin?.set(0, 0, 0);
     o.onInteraction();
     holder.held = item;
+    if (item.stow) item.stowed = false;
     if (portions.has(item.id)) item.obj.visible = true;
     if (item.id === 'glass') items.get('receiving-hand')!.obj.visible = true;
     holder.motion = newMotion();
@@ -249,6 +273,21 @@ export function bindControls(o: ControlsOptions) {
       return;
     }
     if (!live()) return;
+    // Mouse: soltar na gaveta aberta (qualquer objeto) ou um utensílio sobre uma superfície o pousa ali.
+    const drawer = items.get('drawer');
+    const overDrawer = Boolean(drawer) && target === drawer && drawer!.obj.position.x < drawer!.home.x;
+    if (holder.isMouse && release && (overDrawer || item.stow)) {
+      const surfaces = overDrawer ? [drawer!.obj] : root.children.filter((child) => child.userData.box);
+      const hit = ray.intersectObjects(surfaces, true)[0];
+      if (hit?.face && hit.face.normal.y > 0.5) {
+        root.worldToLocal(point.copy(hit.point));
+        point.y += item.stow ? 0.025 : 0.12;
+        item.obj.position.copy(point);
+        if (item.stow) item.obj.rotation.set(0, holder.el.rotation.y, 0);
+      }
+      throwItem(holder, delta.set(0, 0, 0), axis.set(0, 0, 0));
+      return;
+    }
     const id = item.id;
     const container = target?.id === 'glass' || target?.id === 'shaker' ? target.id : null;
     if (id === 'lid') {
@@ -550,13 +589,14 @@ export function bindControls(o: ControlsOptions) {
     if (type === 'squeezeend') return drop(hand);
     const target = front(hand);
     if (type === 'squeezestart') {
-      if (!hand.held) pick(hand, target);
+      if (!hand.held && target?.id === 'drawer') activate(target.id);
+      else if (!hand.held) pick(hand, target);
     } else if (hand.source?.hand) {
       // Pinça para pegar; depois pinça num alvo para usar ou no vazio para soltar.
-      if (!hand.held && (target?.held || target?.id.startsWith('bin-'))) pick(hand, target);
-      else if (hand.held && (!target || hand.held.id === 'lid' || kindOf(hand.held.id) === 'solid')) drop(hand);
+      if (!hand.held && (target?.held || target?.id.startsWith('bin-') || target?.id.startsWith('choose-'))) pick(hand, target);
+      else if (hand.held && (!target || hand.held.id === 'lid' || hand.held.stow || kindOf(hand.held.id) === 'solid')) drop(hand);
       else operate(hand, target);
-    } else if (!hand.held && (target?.held || target?.id.startsWith('bin-'))) {
+    } else if (!hand.held && (target?.held || target?.id.startsWith('bin-') || target?.id.startsWith('choose-'))) {
       pick(hand, target);
       hand.triggerItem = hand.held;
     } else operate(hand, target);
@@ -705,6 +745,14 @@ export function bindControls(o: ControlsOptions) {
     frame,
     releaseAll,
     restoreThrown,
+    /** Novo cliente: o copo volta à bancada (fica invisível até ser pego na estante). */
+    moveDrawer: physics.moveDrawer,
+    clearGlass() {
+      const glass = items.get('glass')!;
+      physics.remove(glass);
+      glass.obj.position.copy(glass.home);
+      glass.obj.quaternion.identity();
+    },
     releaseLid() {
       physics.remove(items.get('lid')!);
       const holder = holders().find((hand) => hand.held?.id === 'lid');

@@ -2,7 +2,7 @@
 // mesmas formas, massa, atrito, quique e amortecimento.
 // Diferença: as patas articuladas dos insetos (ragdoll) ainda não foram portadas.
 import RAPIER from '@dimforge/rapier3d-compat';
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { Item } from '../scene/types';
 
 let ready: Promise<void> | null = null;
@@ -20,7 +20,9 @@ function colliders(id: string, state: any): RAPIER.ColliderDesc[] {
   // Rapier usa cilindros retos; cones truncados viram cilindros de raio médio.
   const cylinder = (top: number, bottom: number, height: number, y = 0) =>
     out.push(RAPIER.ColliderDesc.cylinder(height / 2, (top + bottom) / 2).setTranslation(0, y, 0));
-  if (id === 'spoon' || id === 'pestle') {
+  if (['pliers', 'tweezers', 'knife'].includes(id)) {
+    out.push(RAPIER.ColliderDesc.cuboid(id === 'tweezers' ? 0.077 : 0.105, 0.007, id === 'pliers' ? 0.029 : 0.016));
+  } else if (id === 'spoon' || id === 'pestle') {
     const r = id === 'spoon' ? 0.01 : 0.023;
     cylinder(r, r, 0.17);
     out.push(RAPIER.ColliderDesc.ball(id === 'spoon' ? 0.025 : 0.04).setTranslation(0, id === 'spoon' ? 0.079 : -0.077, 0));
@@ -43,12 +45,46 @@ function colliders(id: string, state: any): RAPIER.ColliderDesc[] {
   return out;
 }
 
-export function throwPhysics(root: THREE.Object3D, bottles: Item[], isHeld: (item: Item) => boolean) {
+export function throwPhysics(
+  root: THREE.Object3D,
+  bottles: Item[],
+  isHeld: (item: Item) => boolean,
+  drawer?: THREE.Object3D,
+) {
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   world.timestep = 1 / 120;
   const bodies = new Map<Item, RAPIER.RigidBody>();
   let roomReady = false;
   let accumulator = 0;
+  let drawerBody: RAPIER.RigidBody | null = null;
+  const bounds = new THREE.Box3();
+
+  /** Move o fundo da gaveta e o que repousa nele. Fechar falha se algo passa da altura do vão. */
+  function moveDrawer(dx: number) {
+    if (!drawerBody) return true;
+    const d = drawerBody.translation();
+    const occupants: [Item, RAPIER.RigidBody][] = [];
+    for (const [item, body] of bodies) {
+      const t = body.translation();
+      const x = t.x - d.x,
+        y = t.y - d.y,
+        z = t.z - d.z;
+      if (x < 0 || x > 0.31 || Math.abs(z) > 0.26 || y < -0.055 || y > 0.08) continue;
+      if (dx > 0) {
+        bounds.setFromObject(item.obj);
+        if (bounds.max.y - root.position.y > 0.997) return false;
+      }
+      occupants.push([item, body]);
+    }
+    drawerBody.setTranslation({ x: d.x + dx, y: d.y, z: d.z }, true);
+    for (const [item, body] of occupants) {
+      const t = body.translation();
+      body.setTranslation({ x: t.x + dx, y: t.y, z: t.z }, true);
+      body.wakeUp();
+      item.obj.position.x += dx;
+    }
+    return true;
+  }
 
   function makeBody(item: Item, state: any, sleeping = false) {
     const { position, quaternion } = item.obj;
@@ -85,6 +121,23 @@ export function throwPhysics(root: THREE.Object3D, bottles: Item[], isHeld: (ite
           body,
         );
       }
+      if (drawer) {
+        const at = drawer.position;
+        drawerBody = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.y, at.z));
+        for (const panel of drawer.children) {
+          const size = panel.userData.box as [number, number, number] | undefined;
+          if (!size) continue;
+          const q = panel.quaternion;
+          world.createCollider(
+            RAPIER.ColliderDesc.cuboid(size[0] / 2, size[1] / 2, size[2] / 2)
+              .setTranslation(panel.position.x, panel.position.y, panel.position.z)
+              .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w })
+              .setFriction(FRICTION)
+              .setRestitution(RESTITUTION),
+            drawerBody,
+          );
+        }
+      }
       roomReady = true;
     }
     // Garrafas paradas acordam com o impacto; a que está numa mão segue o rastreamento.
@@ -115,5 +168,5 @@ export function throwPhysics(root: THREE.Object3D, bottles: Item[], isHeld: (ite
       item.obj.quaternion.set(r.x, r.y, r.z, r.w);
     }
   }
-  return { launch, remove, step, bodies };
+  return { launch, remove, step, bodies, moveDrawer };
 }

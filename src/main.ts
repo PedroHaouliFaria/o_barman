@@ -88,11 +88,12 @@ function render() {
     byId('customer').textContent = order.customer;
     byId('dialogue').textContent = '“' + (state.complaint || order.dialogue) + '”';
     byId('drink').textContent = order.name;
-    const stock =
-      'Copo ' +
-      GLASSES[state.glass.type as keyof typeof GLASSES] +
-      ' · ' +
-      (state.glass.returned ? 'devolvido' : listIngredients(state.glass));
+    const stock = !state.glass.type
+      ? 'Sem copo'
+      : 'Copo ' +
+        GLASSES[state.glass.type as keyof typeof GLASSES] +
+        ' · ' +
+        (state.glass.returned ? 'devolvido' : listIngredients(state.glass));
     const shakerList = listIngredients(state.shaker);
     const shakerStock =
       'Coqueteleira ' + (state.shaker.closed ? 'fechada' : 'aberta') + ' · ' + (shakerList === 'vazio' ? 'vazia' : shakerList);
@@ -111,7 +112,7 @@ function render() {
       }),
     );
     byId('bench-stock').textContent = [stock, shakerStock, technique].filter(Boolean).join(' / ');
-    select('glass-type').value = state.glass.type;
+    select('glass-type').value = state.glass.type ?? '';
     byId('lid').textContent = state.shaker.closed ? 'Abrir tampa' : 'Fechar tampa';
     byId('pause').textContent = state.paused ? 'Retomar turno' : 'Pausar turno';
     for (const control of document.querySelectorAll<HTMLButtonElement | HTMLSelectElement>(
@@ -136,7 +137,7 @@ function act(action: Action) {
   const result = game.dispatch(action as any);
   updateAddButton();
   render();
-  if (result.ok && action.type === 'add') station?.ingredientAdded(action as any);
+  if (result.ok) station?.confirmPreparation(action as any);
   announce(result.message);
   if (!game.state.paused) audio.play(action, result.ok);
   return result;

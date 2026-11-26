@@ -11,6 +11,9 @@ export interface Item {
   home: THREE.Vector3;
   homeQuaternion?: THREE.Quaternion;
   thrownSpecial?: boolean;
+  /** Utensílios da gaveta: soltos ficam onde caem; `stow` os guarda de volta. */
+  stow?: () => void;
+  stowed?: boolean;
 }
 
 export type Target = (id: string, name: string, at: Vec3, held?: boolean, parent?: THREE.Object3D) => THREE.Group;

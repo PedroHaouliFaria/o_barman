@@ -394,7 +394,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     },
     /** Posição de um objeto em coordenadas da estação. Usado pelos testes de navegador. */
     where(id: string) {
-      const p = items.get(id)!.obj.position;
+      const p = root.worldToLocal(items.get(id)!.obj.getWorldPosition(new THREE.Vector3()));
       return { x: p.x, y: p.y, z: p.z };
     },
     /** Gira a câmera desktop para olhar um objeto. Usado pelos testes de navegador. */

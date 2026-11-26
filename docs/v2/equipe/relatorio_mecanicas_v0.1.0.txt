@@ -1,0 +1,321 @@
+Relatório de mecânicas do jogo
+Em Spirits & Spirits, o jogador assume um turno de bartender. Cada cliente pede uma bebida, o jogador escolhe o copo e executa o preparo. Ao longo da noite, animais que já circulavam pelo bar passam a fazer parte de pedidos específicos. Este relatório descreve a versão 0.1.0 do protótipo, no commit 827d239.
+Atendimento e progressão
+O turno começa pelo comando Iniciar ou ao pegar um objeto de preparo ou um copo da estante. A sequência tem nove atendimentos distribuídos em três atos. O relógio acompanha a chegada dos clientes, de 22h00 até o encerramento às 00h30. O tempo gasto preparando uma bebida não reduz a gorjeta. A iluminação ambiente muda entre os atos.
+Cada cliente chega com a bancada sem copo ativo. O jogador lê o pedido e pega na estante um Highball, um Rocks, uma taça Coupe ou uma caneca. Pode trocar enquanto o copo estiver vazio. O livro à direita permite avançar e voltar pelas nove receitas convencionais durante qualquer atendimento. Os adicionais exóticos são comunicados pelo cliente.
+Entrega e devolução
+O jogador leva o copo à mão estendida do cliente ou à bandeja. No desktop, também pode clicar no cliente ou entregar pela Comanda. A avaliação considera o modelo do copo, os ingredientes, as quantidades e a técnica. Uma bebida correta encerra o atendimento. O último acerto encerra o turno.
+Uma entrega sem copo ativo é bloqueada. Se o jogador entregar um copo vazio ou uma bebida errada, o cliente reclama. Uma bebida devolvida conserva o preparo e o cliente continua aguardando. Sua reclamação aparece por escrito, cita o drink pedido e usa humor grotesco. Cabe ao jogador descobrir o erro. A lista de ingredientes da bebida devolvida fica oculta. Ao esvaziar o copo na pia, a lista volta a registrar o próximo preparo.
+Gorjetas
+Entregas erradas antes do acerto
+Moedas recebidas
+Nenhuma
+10
+Uma
+3
+Duas ou mais
+0
+O pote de vidro começa com 0 moedas e acumula as gorjetas de pedidos concluídos. Um turno perfeito rende 90 moedas. Reiniciar o turno zera o saldo.
+
+Estação e preparo das bebidas
+Organização do balcão
+O jogador trabalha em um posto fixo. À frente ficam o suporte de copos, a área de preparo e a entrega. À esquerda ficam a pia e a cuba de gelo. Limão, hortelã e açúcar têm potes próprios. Atrás do jogador, as duas prateleiras superiores agrupam os alcoólicos e a inferior reúne os complementos. O estoque continua disponível entre clientes.
+Ingredientes e recipientes
+Cada dose ou porção vale uma unidade. Em VR, incline a garrafa com o bico perto do copo ou da coqueteleira aberta por cerca de 0,43 segundo. Uma inclinação contínua registra uma dose. Aprume a garrafa para dosar novamente. Limão, gelo e hortelã são retirados com a mão e soltos junto ao recipiente. Para o açúcar, mergulhe a colher no pote e leve a porção para dentro do recipiente.
+Técnica
+Execução no balcão em VR
+Montar
+Deposite cada porção diretamente no copo escolhido. Uma mistura transferida da coqueteleira conta como outro modo de preparo.
+Macerar
+Com limão e açúcar no copo, alinhe o macerador, levante-o e faça duas batidas que entrem no copo.
+Mexer
+Mantenha a ponta da colher dentro do copo e complete aproximadamente uma volta contínua em qualquer sentido. Uma nova dose no copo pede nova mistura para receitas mexidas.
+Bater e transferir
+Encha a coqueteleira, pegue a tampa ao lado e encaixe-a na boca. Agite com movimentos alternados. Retire a tampa e incline sobre um copo vazio. A transferência leva todo o conteúdo. Adicionar ingredientes depois de bater desfaz o estado de bebida batida.
+Como o jogador acompanha o preparo
+Ao adicionar um ingrediente, aparece “+1” com o nome da porção. “Macerado” e “Mexido” aparecem junto ao copo. “Batido” aparece junto à coqueteleira. Os avisos duram cerca de 1,6 segundo. O copo mostra o preenchimento e a coqueteleira tem um indicador lateral de nível. Ao segurar um recipiente, o jogador vê a lista de ingredientes e quantidades ao lado dele.
+A pia limpa o recipiente escolhido. Lavar o copo conserva o modelo e remove seu conteúdo e as marcas de preparo. Lavar a coqueteleira esvazia e abre a peça. Se o recipiente continha o ingrediente ambiental do pedido, a lavagem libera uma nova coleta.
+
+Pedidos do turno
+Cada ingrediente da tabela exige uma unidade. O cliente pode acrescentar um pedido ambiental à receita que aparece no livro. A numeração interna salta do atendimento 8 para o 10. O Homem Alongado é o nono cliente jogável.
+Ato e hora
+Cliente e bebida
+Copo e técnica
+Ingredientes do pedido
+I · 22h00
+Executivo Cuba Libre
+Highball Montar
+Rum, cola, limão e gelo.
+I · 22h15
+Turista Caipirinha
+Rocks Macerar
+Cachaça, limão, açúcar e gelo.
+I · 22h30
+Aposentado Whiskey Sour
+Coupe Bater
+Whisky, suco de limão, xarope de açúcar e gelo.
+I · 22h45
+Festeira Margarita
+Coupe Bater
+Tequila, licor de laranja, suco de limão e gelo.
+II · 23h00
+Cavalheiro Negroni com barata
+Rocks Mexer
+Gin, Campari, vermute tinto, gelo e barata.
+II · 23h15
+Universitário Mojito
+Highball Macerar
+Rum, hortelã, limão, açúcar, água com gás e gelo.
+II · 23h30
+Detetive Dry Martini
+Coupe Mexer
+Gin, vermute seco e gelo.
+II · 23h45
+Homem Encharcado Moscow Mule com gosma
+Caneca Montar
+Vodka, ginger beer, suco de limão, gelo e gosma de lesma.
+III · 00h15
+Homem Alongado Martini com aranha
+Coupe Mexer
+Gin, vermute seco, gelo e aranha.
+Animais e coleta
+A barata percorre a face interna do balcão. A aranha desce do teto por um fio sobre o posto do jogador e volta a subir. Ambas podem ser pegas durante o turno. O exemplar capturado vai para a mão e outro reaparece no cenário após cerca de 3,5 segundos.
+A lesma rasteja no chão, atrás do jogador, sob as bebidas. O trecho mais antigo do rastro perde opacidade, limitando seu comprimento a cerca de 55 cm. Ao colher a gosma, o rastro desaparece e a lesma continua andando e formando outro. O jogo aceita cada adicional no pedido correspondente e permite recuperá-lo após descarte. Quando a fonte pedida permanece disponível, cerca de 12 segundos sem interação acionam uma pista.
+
+Interação física e modos de jogo
+Mãos e objetos em realidade virtual
+As mãos esquerda e direita têm mira e interação independentes. É possível segurar o copo com uma mão e dosar, mexer ou transferir com a outra. O jogador pode alcançar objetos de perto ou apontar à distância. Com controles, usa grip ou gatilho conforme a ação. Com rastreamento de mãos, usa a pinça dos dedos para pegar e interagir. A placa Altura reposiciona a bancada em relação à cabeça para uso sentado ou em pé.
+Ao soltar, o objeto recebe a velocidade e o giro da mão. Pode cair, quicar, tombar, atingir outra garrafa e ser recolhido onde parou. Os insetos têm segmentos de pernas articulados. A gaveta sob o livro abre e fecha, tem fundo e laterais sólidos e leva consigo os itens apoiados. Alicate, pinça e faca podem ser retirados, girados e deixados livremente, inclusive em outra posição dentro da gaveta. Seu uso em drinks corporais pertence a uma etapa futura.
+Mouse e teclado
+Arraste para olhar e clique para pegar, usar ou depositar. Com uma garrafa em mãos, clique no recipiente para dosar e na base identificada para guardá-la. Use a colher no pote e depois no recipiente para adicionar açúcar. Os cliques também acionam os utensílios. A tecla E executa a ação contextual, inclusive agitar a coqueteleira fechada. A tecla Q arremessa o objeto na direção da câmera.
+Caderno e controles da sessão
+A Comanda apresenta cliente, pedido, conteúdo e entrega. A Bancada oferece ações por botão para escolher copo e recipiente, adicionar porções, coletar e devolver especiais, preparar, transferir e lavar. O Manual traz as receitas-base. Esses controles usam as mesmas regras da cena 3D. Som, tela cheia, ajuda e entrada em VR ficam na barra superior. Sinais sonoros acompanham ações e coletas. As falas dos clientes são escritas.
+É possível pausar e retomar o atendimento. Ocultar a página, interromper a visibilidade da sessão imersiva ou sair de VR aciona a pausa durante o turno. Recarregar a página inicia uma nova sessão.
+Verificação técnica e validação humana
+Em 26/11/2026, os 35 testes de regras, gestos, ambiente e física passaram no commit 827d239. O roteiro de navegador completou os nove pedidos pelo Caderno. A etapa de mouse na cena interrompeu a execução ao tentar localizar a aranha. O percurso completo por mouse nessa revisão permanece sem confirmação.
+Resultados humanos aguardam envio. A ficha docs/resultados-humanos.md está reservada para registrar dispositivo, tarefa, observação, dificuldade e reteste. Alcance físico, conforto, leitura e uso das duas mãos no Quest aguardam esses relatos.
+Fichas de validação humana
+Duplique a ficha ao repetir um teste em outro ambiente ou após uma correção. Use a seção Pedidos do turno como referência para os testes de receita.
+Sessão / participante / data ________________________   Versão ______________
+Sessão e orientação
+01 Entrada e saída de VR
+Esperado  Abra no Quest, entre em VR, mova a cabeça e saia. A visão acompanha o movimento e o turno pausa ao sair.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+02 Início do turno
+Esperado  Use Iniciar ou pegue um objeto de preparo. O Executivo chega às 22h00 com a bancada sem copo ativo.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+03 Olhar e posto fixo
+Esperado  Arraste no desktop ou vire a cabeça em VR para localizar as áreas do bar. A posição de trabalho permanece fixa.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+04 Ajuste de altura
+Esperado  Acione Altura em VR sentado e em pé. A bancada se reposiciona em relação à cabeça.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+05 Pausa e retomada
+Esperado  Pause pelo comando e interrompa a visibilidade da sessão. O preparo fica bloqueado na pausa e disponível ao retomar.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+06 Som, ajuda e tela cheia
+Esperado  Alterne o som, abra os controles e teste tela cheia em um navegador compatível. Confira o estado dos comandos e os sinais sonoros.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+Consulta e seleção de objetos
+07 Comanda e leitura do pedido
+Esperado  Identifique o cliente, o nome da bebida e a fala escrita. Confira se a comanda muda após uma entrega aprovada.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+08 Livro de receitas e Manual
+Esperado  Avance e volte entre as nove receitas-base na cena e consulte a aba Manual no Caderno.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+09 Escolha manual e troca do copo
+Esperado  Com a bancada sem copo ativo, pegue um modelo na estante. Troque enquanto estiver vazio e tente trocar depois de adicionar uma dose.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+10 Estante de bebidas e áreas de preparo
+Esperado  Localize as garrafas atrás do jogador, as porções nos potes e no gelo, a pia à esquerda e a entrega. No desktop, guarde a garrafa na base identificada.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+11 Pegada com controles e rastreamento de mãos
+Esperado  Pegue, use e solte com a esquerda e com a direita. Compare grip, gatilho e pinça dos dedos quando disponíveis.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+12 Manipulação com as duas mãos
+Esperado  Segure o copo com uma mão e use uma garrafa ou utensílio com a outra. Inverta as mãos e observe a seleção por proximidade e por mira.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+Dosagem e técnicas de preparo
+13 Dosagem de líquidos
+Esperado  Incline uma garrafa perto do recipiente até registrar uma dose. Mantenha a inclinação, volte à vertical e repita.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+14 Porções sólidas e montagem direta
+Esperado  Retire gelo, limão e hortelã das fontes e deposite no copo. Confira uma unidade por porção e a montagem direta.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+15 Colherada de açúcar
+Esperado  Mergulhe a colher no açúcar e leve a porção ao copo ou à coqueteleira aberta. No desktop, use os cliques correspondentes.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+16 Maceração
+Esperado  Com limão e açúcar no copo, bata duas vezes com o macerador em VR. Confira o aviso Macerado.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+17 Mistura com colher
+Esperado  Complete uma volta dentro do copo em VR. Confira o aviso Mexido. Adicione outra dose e volte a mexer.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+18 Tampa da coqueteleira
+Esperado  Pegue a tampa, encaixe na boca e tente adicionar uma dose. Retire a tampa para reabrir o recipiente.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+Coqueteleira e serviço
+19 Agitação da coqueteleira
+Esperado  Agite a coqueteleira fechada com ingredientes em movimentos alternados. Confira o aviso Batido.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+20 Transferência da coqueteleira
+Esperado  Abra a tampa e incline sobre o copo vazio. A mistura passa para o copo. Teste também com a tampa fechada ou o copo ocupado.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+21 Indicadores de conteúdo e de dose
+Esperado  Adicione uma porção e observe o aviso +1, o preenchimento e o indicador lateral. Segure cada recipiente para ler a lista.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+22 Lavagem na pia
+Esperado  Lave o copo e a coqueteleira separadamente. Confira se o outro recipiente preserva seu preparo.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+23 Entrega e julgamento da receita
+Esperado  Entregue pela mão do cliente, pela bandeja ou pela Comanda. Compare a aprovação da receita completa com uma entrega sem copo ativo.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+24 Reclamação e nova tentativa
+Esperado  Sirva uma bebida errada. Confira se a fala cita o pedido sem revelar a causa, se a lista fica oculta e se a pia permite refazer.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+Progressão e ingredientes ambientais
+25 Gorjetas
+Esperado  Confira 10 moedas no primeiro acerto, 3 após um erro e 0 após dois ou mais erros no mesmo pedido.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+26 Progressão, encerramento e reinício
+Esperado  Sirva os nove pedidos e observe a troca de clientes, horário e iluminação. Reinicie e confira o retorno ao primeiro pedido com saldo zero.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+27 Captura da barata
+Esperado  Localize a barata na face interna do balcão, pegue-a e observe o reaparecimento. Deposite uma porção no Negroni.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+28 Captura da aranha
+Esperado  Localize a aranha no fio que desce do teto, pegue-a e observe o reaparecimento. Deposite uma porção no Martini.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+29 Lesma e coleta de gosma
+Esperado  Observe o rastro encurtar pela ponta antiga. Recolha a gosma, confira a formação de outro rastro e use a porção no Moscow Mule.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+30 Pistas, descarte e nova coleta
+Esperado  Aguarde a pista com a fonte disponível. Descarte a porção fora do recipiente ou lave o recipiente que a recebeu e colete novamente.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+Física e alternativas de interação
+31 Soltura, arremesso e recuperação
+Esperado  Solte um objeto parado e em movimento. Observe queda, giro, colisão e possibilidade de recolher. No desktop, teste Q.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+32 Física dos insetos soltos
+Esperado  Arremesse uma barata ou aranha. Observe o corpo, o movimento das pernas e a possibilidade de pegar o exemplar novamente.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+33 Gaveta e armazenamento livre
+Esperado  Abra a gaveta, retire alicate, pinça e faca e solte-os em posições diferentes. Feche e reabra para conferir onde ficaram.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+34 Controles com mouse e teclado
+Esperado  Arraste para olhar, clique para pegar e usar, e pressione E para a ação contextual. Registre onde clique e arraste foram confundidos.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+35 Preparo assistido no Caderno
+Esperado  Use Bancada e Comanda para escolher copo, preparar, lavar, coletar um especial e servir pelos botões.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________
+36 Recarga da página
+Esperado  Com um preparo em andamento, recarregue a página. Confira se a aplicação volta à abertura de uma sessão nova.
+Sessão e ambiente (dispositivo, controle, mão ou postura) _____________________________
+Resultado  ☐ Aprovado   ☐ Falhou   ☐ Bloqueado   ☐ Interrompido
+O que aconteceu e dificuldades __________________________________________________
+Evidência, melhoria ou reteste ____________________________________________________

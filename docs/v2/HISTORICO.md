@@ -108,3 +108,10 @@ Cada fala do Felipe (com data), o que mudou e onde ficou. Nada se apaga; versõe
 **Felipe:** "vamos de on the house mesmo. e pode comecar"
 → Nome do jogo: **On the House** ("por conta da casa": a Casa é o bar, que cobra no contrato do epílogo). Trocado no título, barra, créditos, placa da cena do jogo, README, CLAUDE.md, visao.md e package.json. Documentos antigos (devlog, ficha v1, moodboard, planta_v1) ficam como estavam (acervo). O laboratório de arte (`estilos.html`, `art/blender/labels.py`) é da frente da arte.
 → Começa o porte das funções do PR #1 da equipe para a v2.
+
+**Felipe:** "so pra entender, voce ta fazendo o jogo no nosso novo estilo e grafico ne? digo isso pois as capturas de tela tao com os antigos"
+**Felipe:** "cara, LOGICO que ue quero levar pro jogo novo. o antigo era so pra testar as mecanicas lee tudo. e essa e literalmetne a SUA task. pegar o jogo novo e colocar as mecanicas ja existentes NEEL. e deixar jogave"
+→ A sessão da mecânica passa a integrar a arte nova (bar Âmbar Noturno, objetos e clientes Máscara) na cena do jogo, mantendo as mecânicas.
+
+**Felipe (26/11/2026):** "aqui o relatorio de maecanicas que meu amigo preparou" (anexo `Relatorio de mecanicas.docx`)
+→ Guardado em [equipe/relatorio_mecanicas_v0.1.0.docx](equipe/relatorio_mecanicas_v0.1.0.docx) (texto em `.txt` ao lado). Descreve o protótipo A-Frame no commit 827d239 e traz 36 fichas de validação humana. Serve de referência das mecânicas a manter na v2.

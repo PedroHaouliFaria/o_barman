@@ -37,6 +37,12 @@ PEOPLE = {
                        shirt=(0.88, 0.86, 0.8), tie=(0.15, 0.22, 0.32), hair='calvo', hair_color=(0.52, 0.5, 0.48),
                        iris=(0.35, 0.42, 0.45), mood='sereno', nose=1.25, lips=(0.6, 0.3, 0.28), blush=0.35,
                        mustache=True, glasses=True),
+    # cliente 7: reservada, observadora; ao virar de costas revela um segundo rosto na nuca
+    'detetive': dict(body='sobretudo', seated=False, coat=(0.6, 0.48, 0.32), coat2=(0.34, 0.25, 0.16),
+                     shirt=(0.8, 0.78, 0.72), hair='chanel', hair_color=(0.1, 0.07, 0.06), iris=(0.25, 0.42, 0.3),
+                     mood='desconfiada', nose=0.85, lips=(0.55, 0.12, 0.14), blush=0.2, hat=True,
+                     back_face=dict(mood='segundo', eyes='pintado', nose=0.6, iris=(0.0, 0.0, 0.0),
+                                    lips=(0.12, 0.02, 0.03), blush=0.0)),
 }
 
 MOODS = {
@@ -44,6 +50,9 @@ MOODS = {
     'cansado': dict(brow=0.06, mouth=-0.06, lid=0.42, happy=0.0),
     'sorriso': dict(brow=-0.03, mouth=0.14, lid=0.1, happy=0.6),
     'sereno': dict(brow=0.02, mouth=0.04, lid=0.3, happy=0.25),
+    'desconfiada': dict(brow=-0.02, mouth=-0.01, lid=0.38, happy=0.0),
+    # o segundo rosto: olhos pretos pintados e sorriso largo demais
+    'segundo': dict(brow=-0.05, mouth=0.24, lid=0.0, happy=0.0),
 }
 
 
@@ -63,6 +72,8 @@ def paint_eye(x, z, sx, iris, mood):
         if v > vt or v < vb:  # contorno: traço de nanquim, mais grosso em cima
             return (0.05, 0.035, 0.03)
         d = math.hypot((x - cx - sx * 0.005) / 0.058, (z - cz + 0.004) / 0.058)
+        if iris == (0.0, 0.0, 0.0):  # segundo rosto: olho todo preto
+            return (0.01, 0.01, 0.01)
         if d < 0.38:
             hl = math.hypot((x - cx + 0.018) / 0.014, (z - cz - 0.02) / 0.014)
             return (0.95, 0.95, 0.92) if hl < 1 else (0.02, 0.015, 0.015)
@@ -109,6 +120,7 @@ def srgb(x):
 
 
 def paint_face_image(name, p, mood, eyes, ivory, iris, lips, brow_col, size=1024):
+    back = p.get('back_face')
     """Pinta o rosto numa textura (UV: u = longitude, v = latitude da esfera unitária)."""
     img = bpy.data.images.new(name, size, size)
     px = [0.0] * (size * size * 4)
@@ -117,9 +129,15 @@ def paint_face_image(name, p, mood, eyes, ivory, iris, lips, brow_col, size=1024
         lat = (j / (size - 1) - 0.5) * math.pi
         cl, z = math.cos(lat), math.sin(lat)
         for i in range(size):
-            lon = (i / (size - 1) - 0.5) * 2 * math.pi
+            lon = i / (size - 1) * 2 * math.pi + math.pi / 2
             x, y = cl * math.sin(lon), cl * math.cos(lon)
-            c = face_color(x, z, p, mood, eyes, ivory, iris, lips, brow_col) if y > 0.1 else base
+            if y > 0.1:
+                c = face_color(x, z, p, mood, eyes, ivory, iris, lips, brow_col)
+            elif back and y < -0.1:
+                b = back
+                c = face_color(-x, z, b, MOODS[b['mood']], b['eyes'], ivory, lin(b['iris']), lin(b['lips']), brow_col)
+            else:
+                c = base
             k = (j * size + i) * 4
             px[k:k + 4] = (srgb(c[0]), srgb(c[1]), srgb(c[2]), 1.0)  # imagem PNG guarda sRGB
     img.pixels.foreach_set(px)
@@ -160,6 +178,29 @@ def hair_shell(name, head_c, radii, lon0, lon1, bottom, top, mat, nu=96, nv=24, 
     return lib.to_mesh(lib.smooth(lib.link(o)))
 
 
+def sculpt_face(x, z, mood, nose, eyes):
+    """Relevo do rosto em coordenadas da esfera unitária (x lateral, z vertical)."""
+    eye = min(math.hypot((x - sx * 0.33) / 1.25, z - 0.1) for sx in (-1, 1))
+    disp = 0.0
+    if eyes == 'buraco':
+        disp -= 0.55 * smoothstep(0.17, 0.1, eye)
+    else:
+        disp -= 0.045 * gauss(eye, 0.14)
+        disp += 0.025 * gauss(eye, 0.07)
+    disp += 0.05 * gauss(z - 0.3, 0.08) * gauss(abs(x) - 0.3, 0.3)
+    disp -= mood['brow'] * gauss(z - 0.3, 0.06) * gauss(abs(x) - 0.55, 0.12)
+    disp += 0.2 * nose * gauss(x, 0.07 * (0.8 + 0.3 * nose)) * smoothstep(0.1, -0.1, z) * smoothstep(-0.46, -0.28, z)
+    disp += 0.09 * nose * gauss(math.hypot(x, z + 0.4), 0.09 * nose)
+    disp += 0.05 * mood['happy'] * sum(gauss(math.hypot(x - sx * 0.42, z + 0.28), 0.16) for sx in (-1, 1))
+    disp -= 0.04 * (1 - mood['happy']) * gauss(math.hypot(abs(x) - 0.45, z + 0.25), 0.2)
+    mouth_z = -0.62 + mood['mouth'] * abs(x) * 2.2
+    disp += 0.035 * gauss(z - mouth_z - 0.045, 0.035) * gauss(x, 0.24)
+    disp += 0.04 * gauss(z - mouth_z + 0.05, 0.04) * gauss(x, 0.2)
+    disp -= 0.035 * gauss(z - mouth_z, 0.015) * gauss(x, 0.26)
+    disp += 0.06 * gauss(math.hypot(x, z + 0.9), 0.2)
+    return disp
+
+
 def build_mask_head(parts, key, p, head_c, eyes='pintado'):
     mood = MOODS[p['mood']]
     ivory = lin((0.93, 0.89, 0.82))
@@ -190,12 +231,38 @@ def build_mask_head(parts, key, p, head_c, eyes='pintado'):
         parts.append(lathe_at('presilha', [(0.0, 0), (0.06, 0.0), (0.06, 0.012), (0, 0.012)],
                               head_c + Vector((0, -0.1, 0.13)), P('presilha', lin((0.55, 0.1, 0.12)), roughness=0.4),
                               24, rot=(math.radians(60), 0, 0)))
+    elif p['hair'] == 'chanel':
+        for a0, a1 in ((math.radians(40), math.radians(130)), (math.radians(230), math.radians(320))):
+            parts.append(hair_shell('cabelo', head_c, (0.158, 0.168, 0.187), a0, a1,
+                                    lambda lon: -0.42 + 0.06 * math.sin(lon * 5),
+                                    lambda lon: math.pi / 2 - 0.05, hair_mat, nu=48, nv=24, wave=0.006))
+        parts.append(hair_shell('franja', head_c, (0.16, 0.17, 0.189), math.radians(-42), math.radians(42),
+                                lambda lon: 0.5 + 0.03 * math.cos(lon * 8), lambda lon: math.pi / 2 - 0.05, hair_mat,
+                                nu=48, nv=16))
     elif p['hair'] == 'calvo':
         # coroa grisalha de orelha a orelha, por trás; o topo fica careca
         parts.append(hair_shell('cabelo', head_c, (0.155, 0.165, 0.183), math.radians(70), math.radians(290),
                                 lambda lon: -0.3 + 0.05 * math.cos(lon * 3),
                                 lambda lon: 0.12 + 0.12 * max(0.0, -math.cos(lon)) + 0.025 * math.sin(lon * 11),
                                 hair_mat, nu=96, nv=16, wave=0.012))
+    if p.get('hat'):
+        felt = P(f'{key}_chapeu', lin((0.16, 0.13, 0.1)), roughness=0.8)
+        band = P(f'{key}_fita_chapeu', lin((0.08, 0.05, 0.04)), roughness=0.4)
+        top_z = head_c.z + 0.13
+        parts.append(lathe_at('aba', [(0.0, 0.0), (0.25, -0.012), (0.255, 0.0), (0.24, 0.012), (0.0, 0.012)],
+                              Vector((0, 0.01, top_z)), felt, 56, rot=(math.radians(-8), 0, 0)))
+        crown = lib.lathe('copa', [(0.0, 0.0), (0.15, 0.0), (0.155, 0.07), (0.145, 0.12), (0.09, 0.145),
+                                   (0.03, 0.13), (0.0, 0.135)], 48)
+        for v in crown.data.vertices:
+            ang = math.atan2(v.co.x, -v.co.y)
+            if v.co.z > 0.08:
+                v.co.z -= 0.022 * gauss(ang - math.pi, 0.5) * smoothstep(0.08, 0.145, v.co.z)
+        crown.location = Vector((0, 0.01, top_z + 0.005))
+        crown.rotation_euler.x = math.radians(-8)
+        lib.assign(crown, felt)
+        parts.append(lib.link(crown))
+        parts.append(lathe_at('fita', [(0.153, 0.0), (0.157, 0.0), (0.157, 0.03), (0.153, 0.03)],
+                              Vector((0, 0.01, top_z + 0.01)), band, 48, rot=(math.radians(-8), 0, 0)))
     # máscara esculpida e pintada
     bpy.ops.mesh.primitive_uv_sphere_add(segments=192, ring_count=144, radius=1.0)
     mask = bpy.context.active_object
@@ -204,34 +271,22 @@ def build_mask_head(parts, key, p, head_c, eyes='pintado'):
     bm.from_mesh(mask.data)
     kill = []
     nose = p['nose']
+    back = p.get('back_face')
     uv_layer = bm.loops.layers.uv.verify()
     for f in bm.faces:  # UV pela direção original (antes de esculpir)
         for loop in f.loops:
             x, y, z = loop.vert.co
-            loop[uv_layer].uv = (0.5 + math.atan2(x, y) / (2 * math.pi), 0.5 + math.asin(max(-1, min(1, z))) / math.pi)
+            lon = (math.atan2(x, y) - math.pi / 2) % (2 * math.pi)
+            loop[uv_layer].uv = (lon / (2 * math.pi), 0.5 + math.asin(max(-1, min(1, z))) / math.pi)
     for v in bm.verts:
         x, y, z = v.co
         if eyes == 'buraco' and (y < 0.15 or z > 0.8 or z < -0.95):
             kill.append(v)
             continue
-        eye = min(math.hypot((x - sx * 0.33) / 1.25, z - 0.1) for sx in (-1, 1))
-        disp = 0.0
-        if eyes == 'buraco':
-            disp -= 0.55 * smoothstep(0.17, 0.1, eye)
-        else:
-            disp -= 0.045 * gauss(eye, 0.14)                     # leve concavidade
-            disp += 0.025 * gauss(eye, 0.07)                     # globo pintado sobressai
-        disp += 0.05 * gauss(z - 0.3, 0.08) * gauss(abs(x) - 0.3, 0.3)
-        disp -= mood['brow'] * gauss(z - 0.3, 0.06) * gauss(abs(x) - 0.55, 0.12)
-        disp += 0.2 * nose * gauss(x, 0.07 * (0.8 + 0.3 * nose)) * smoothstep(0.1, -0.1, z) * smoothstep(-0.46, -0.28, z)
-        disp += 0.09 * nose * gauss(math.hypot(x, z + 0.4), 0.09 * nose)
-        disp += 0.05 * mood['happy'] * sum(gauss(math.hypot(x - sx * 0.42, z + 0.28), 0.16) for sx in (-1, 1))
-        disp -= 0.04 * (1 - mood['happy']) * gauss(math.hypot(abs(x) - 0.45, z + 0.25), 0.2)
-        mouth_z = -0.62 + mood['mouth'] * abs(x) * 2.2
-        disp += 0.035 * gauss(z - mouth_z - 0.045, 0.035) * gauss(x, 0.24)
-        disp += 0.04 * gauss(z - mouth_z + 0.05, 0.04) * gauss(x, 0.2)
-        disp -= 0.035 * gauss(z - mouth_z, 0.015) * gauss(x, 0.26)
-        disp += 0.06 * gauss(math.hypot(x, z + 0.9), 0.2)
+        # rosto da frente (só no hemisfério da frente) e, se houver, o segundo rosto na nuca
+        disp = smoothstep(-0.1, 0.4, y) * sculpt_face(x, z, mood, nose, eyes)
+        if back:
+            disp += smoothstep(-0.1, 0.4, -y) * sculpt_face(-x, z, MOODS[back['mood']], back['nose'], back['eyes'])
         v.co = v.co + v.co.normalized() * disp
         v.co = Vector((v.co.x * 0.15, v.co.y * 0.16 + 0.012, v.co.z * 0.18))
     bmesh.ops.delete(bm, geom=kill, context='VERTS')
@@ -329,7 +384,8 @@ def build_person(key, p):
     parts = []
     seated = p['seated']
     dz = -0.14 if seated else 0.0          # sentado: tronco desce até o assento (0.46)
-    glove = P(f'{key}_luva', lin((0.92, 0.9, 0.85)), roughness=0.55)
+    glove = P(f'{key}_luva', lin((0.12, 0.08, 0.06) if p['body'] == 'sobretudo' else (0.92, 0.9, 0.85)),
+              roughness=0.45 if p['body'] == 'sobretudo' else 0.55)
     shoe = P(f'{key}_sapato', lin((0.06, 0.04, 0.03)), roughness=0.25)
     shirt = P(f'{key}_camisa', lin(p['shirt']), roughness=0.6)
     if p['body'] == 'terno':
@@ -365,6 +421,40 @@ def build_person(key, p):
                                P(f'{key}_lenco', lin((0.85, 0.8, 0.7))), center0=(-0.13, 0.135), bevel=0.002))
         sleeve_mat = cloth
         legs_mat = cloth
+    elif p['body'] == 'sobretudo':
+        coat = P(f'{key}_sobretudo', lin(p['coat']), roughness=0.75)
+        coat2 = P(f'{key}_cinto', lin(p['coat2']), roughness=0.5)
+        parts.append(prism('sobretudo_saia', 0.32 + dz, 0.92 + dz, (0.25, 0.17), (0.17, 0.12), coat, bevel=0.03))
+        parts.append(prism('sobretudo_peito', 0.92 + dz, 1.22 + dz, (0.17, 0.12), (0.23, 0.12), coat, bevel=0.03))
+        parts.append(prism('ombros', 1.22 + dz, 1.3 + dz, (0.23, 0.12), (0.18, 0.1), coat, bevel=0.03))
+        parts.append(prism('cinto', 0.9 + dz, 0.96 + dz, (0.175, 0.125), (0.175, 0.125), coat2, bevel=0.01))
+        parts.append(prism('fivela', 0.905 + dz, 0.955 + dz, (0.025, 0.005), (0.025, 0.005),
+                           P('fivela', lin((0.6, 0.5, 0.3)), roughness=0.3, metallic=1.0), center0=(0.0, 0.13),
+                           bevel=0.003))
+        for sx in (-1, 1):  # gola larga e dragonas
+            bm = bmesh.new()
+            vs = [bm.verts.new((x, y, z + dz)) for x, y, z in ((sx * 0.02, 0.135, 1.0), (sx * 0.22, 0.13, 1.22),
+                                                                (sx * 0.15, 0.12, 1.33), (sx * 0.05, 0.14, 1.12))]
+            bm.faces.new(vs if sx > 0 else list(reversed(vs)))
+            me = bpy.data.meshes.new('gola_trench')
+            bm.to_mesh(me)
+            bm.free()
+            lap = bpy.data.objects.new('gola_trench', me)
+            sol = lap.modifiers.new('esp', 'SOLIDIFY')
+            sol.thickness = 0.015
+            sol.offset = 0.0
+            lib.assign(lap, coat)
+            parts.append(lib.to_mesh(lib.link(lap)))
+            parts.append(prism('dragona', 1.29 + dz, 1.31 + dz, (0.05, 0.025), (0.05, 0.025), coat2,
+                               center0=(sx * 0.19, 0.0), bevel=0.005))
+            for z in (0.98, 1.08, 0.75, 0.6):
+                parts.append(lathe_at('botao', [(0, 0), (0.016, 0), (0.016, 0.006), (0, 0.008)],
+                                      (sx * 0.08, 0.128 if z > 0.9 else 0.16, z + dz), coat2, 12,
+                                      rot=(-math.pi / 2, 0, 0)))
+        parts.append(prism('lenco_pescoco', 1.2 + dz, 1.3 + dz, (0.06, 0.005), (0.09, 0.005), shirt,
+                           center0=(0, 0.125), center1=(0, 0.11), bevel=0.0))
+        sleeve_mat = coat
+        legs_mat = P(f'{key}_meia', lin((0.1, 0.07, 0.06)), roughness=0.5)
     else:  # vestido com corpete, saia evasê e gola alta de renda
         dress = P(f'{key}_vestido', lin(p['dress']), roughness=0.7)
         dress2 = P(f'{key}_vestido_detalhe', lin(p['dress2']), roughness=0.6)
@@ -445,7 +535,10 @@ def build_person(key, p):
 
 
 lib.reset()
+only = sys.argv[sys.argv.index('--') + 2:] if '--' in sys.argv and len(sys.argv) > sys.argv.index('--') + 2 else []
 for key, p in PEOPLE.items():
+    if only and key not in only:
+        continue
     print('CONSTRUINDO', key)
     build_person(key, p)
 print('PRONTO')

@@ -27,6 +27,7 @@ const VIEWS = {
   aposentado: { name: 'Aposentado de frente', pos: [-1.9, 1.42, -3.7], look: [-1.32, 1.22, -4.7] },
   executivo_lado: { name: 'Executivo de lado', pos: [0.75, 1.55, -1.05], look: [0, 1.4, -1.6] },
   aposentado_lado: { name: 'Aposentado de lado', pos: [-0.75, 1.4, -4.4], look: [-1.32, 1.25, -4.7] },
+  detetive: { name: 'Detetive de perto', pos: [-0.85, 1.6, -0.72], look: [-0.85, 1.5, -1.62] },
   executivo: { name: 'Executivo de perto', pos: [0, 1.55, -0.75], look: [0, 1.45, -1.6] },
   pianista: { name: 'Olhando o pianista', pos: [0, 1.62, 0], look: [3.4, 1.3, -7.3] },
   bancada: { name: 'Bancada', pos: [0, 1.62, 0], look: [0, 1.0, -0.8] },
@@ -34,6 +35,15 @@ const VIEWS = {
 type ViewId = keyof typeof VIEWS;
 
 const listener = new THREE.AudioListener();
+/** pessoas que viram de costas de tempos em tempos (a Detetive revela o segundo rosto) */
+const turners: THREE.Object3D[] = [];
+function turnCycle(t: number) {
+  // 16 s: de frente, vira devagar, fica de costas, volta
+  const c = t % 16;
+  const k = c < 6 ? 0 : c < 8 ? (c - 6) / 2 : c < 12 ? 1 : c < 14 ? 1 - (c - 12) / 2 : 0;
+  const e = k * k * (3 - 2 * k);
+  return Math.PI * (1 - e);
+}
 const audio = createLabAudio(listener);
 
 function Rig({ view }: { view: ViewId }) {
@@ -126,9 +136,13 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
         if (which === 'normais') {
           // estilo Máscara: normais pintados (balcão e mesa) + um estranho de olhos-buraco para contraste
           bar.frontCustomer.visible = false;
-          loadModels(['mascara_executivo', 'mascara_turista', 'mascara_aposentado', 'pessoa_mascara']).then(
-            ([exec, turista, aposentado, estranho]) => {
+          loadModels(['mascara_executivo', 'mascara_turista', 'mascara_aposentado', 'pessoa_mascara', 'mascara_detetive']).then(
+            ([exec, turista, aposentado, estranho, detetive]) => {
               if (!alive) return;
+              detetive.position.set(-0.85, 0, -1.62);
+              detetive.rotation.y = Math.PI;
+              bar.root.add(detetive);
+              turners.push(detetive);
               exec.position.set(0, 0, -1.6);
               exec.rotation.y = Math.PI;
               estranho.position.set(1.0, 0, -1.65);
@@ -168,6 +182,7 @@ function Bar({ styleId, sound, onBar }: { styleId: StyleId; sound: boolean; onBa
   }, [bar, sound, style, onBar]);
   useFrame((state, dt) => {
     bar.update(state.clock.elapsedTime, dt);
+    for (const p of turners) p.rotation.y = turnCycle(state.clock.elapsedTime);
     const opening = bar.door.openness > 0.05;
     if (opening && !wasOpen.current && sound) audio.creak(bar.doorAnchor);
     wasOpen.current = opening;

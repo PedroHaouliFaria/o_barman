@@ -66,7 +66,7 @@ export function vesselFeedback({ root, stage, vessels }: { root: THREE.Object3D;
   function render(state: any, reset: boolean) {
     for (const [id, card] of Object.entries(cards) as [VesselId, Card][]) {
       const vessel = state[id];
-      card.hide = id === 'glass' && (!vessel.type || vessel.returned);
+      card.hide = id === 'glass' && !vessel.type;
       if (reset) card.since = -Infinity;
       if (card.hide) continue;
       const entries = Object.entries(vessel.ingredients) as [keyof typeof INGREDIENTS, number][];
@@ -81,7 +81,9 @@ export function vesselFeedback({ root, stage, vessels }: { root: THREE.Object3D;
         id === 'glass' && vessel.stirred && 'Mexido',
         vessel.shaken && 'Batido',
       ].filter(Boolean) as string[];
-      const text = done.join('  ·  ');
+      // Copo devolvido pelo cliente: o recado é lavar (Felipe, 27/11/2026: "ele precisa lavar o
+      // copo e [...] nao pode descartar e jogar fora o copo").
+      const text = id === 'glass' && vessel.returned ? 'Devolvido  ·  lave na pia' : done.join('  ·  ');
       if (text !== card.badgeText) {
         card.badgeText = text;
         if (text) card.badge.draw({ text });

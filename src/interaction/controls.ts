@@ -60,6 +60,8 @@ export interface ControlsOptions {
   tickEnvironment: (dt: number) => void;
   updateVesselPanels: (holders: Holder[]) => void;
   /** Gesto em andamento: progresso 0..1 e `step` a cada batida/volta/pilada (som e anel). */
+  /** O jogador tentou trocar/descartar o copo sujo: a pia chama atenção. */
+  onDirtyGlass?: () => void;
   /** Som de manuseio: pegar e pousar. */
   onSound?: (name: 'pick' | 'clink', where: THREE.Object3D) => void;
   /** Líquido caindo (chamado a cada quadro enquanto despeja; null = parou). */
@@ -244,7 +246,17 @@ export function bindControls(o: ControlsOptions) {
     if (item?.id.startsWith('choose-')) {
       if (session.state.phase === 'menu') act({ type: 'start' });
       const glass = items.get('glass')!;
-      if (holders().some((h) => h.held === glass)) return;
+      if (holders().some((h) => h.held === glass)) {
+        feedback('Você já está com o copo na mão. Use este, ou lave-o na pia para trocar.');
+        return;
+      }
+      const current = session.state.glass;
+      if (live() && current.type && (Object.keys(current.ingredients).length || current.returned)) {
+        // Um copo por vez: o usado não some nem é jogado fora, ele vai para a pia.
+        feedback('Esse copo ainda está sujo. Leve-o até a pia para lavar antes de pegar outro.');
+        o.onDirtyGlass?.();
+        return;
+      }
       if (!live() || !act({ type: 'selectGlass', glass: item.id.slice(7) }).ok) return;
       physics.remove(glass);
       if (holder.isMouse) {
@@ -855,7 +867,10 @@ export function bindControls(o: ControlsOptions) {
       else item.obj.quaternion.identity();
       if (portions.has(item.id)) item.obj.visible = portionAtRest.get(item.id)!;
       item.stow?.();
-      feedback((item.name || 'O objeto') + ' voltou para o lugar.');
+      if (item.id === 'glass') {
+        feedback('O copo não se joga fora: ele voltou para a bancada. Para trocar, lave-o na pia.');
+        o.onDirtyGlass?.();
+      } else feedback((item.name || 'O objeto') + ' voltou para o lugar.');
       o.onSound?.('clink', item.obj);
     }
   }

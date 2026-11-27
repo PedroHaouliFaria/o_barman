@@ -8,7 +8,7 @@ import { customerCast, dressBottle, dressGlass, dressUtensils, loadUtensils } fr
 import { BASE, GLASS_SHAPES } from './glass-shapes.js';
 import { bindControls } from '../interaction/controls';
 import { box, cone, customer, cylinder, group, rotate, room, sphere, torus, type Vec3 } from './blockout';
-import { bookPage, medallion, paperLabel, plaque, subtitle, ticket, type Panel } from '../ui/world-ui';
+import { bookPage, floatingWord, fontsReady, medallion, paperLabel, plaque, subtitle, ticket, type Panel } from '../ui/world-ui';
 import { buildEvents, specimen } from './environment';
 import { createPianist } from '../audio/piano';
 import { createMurmurs } from '../audio/room';
@@ -145,6 +145,31 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   cylinder(sink, [0, 0.016, 0], 0.025, 0.005, '#9aa69d');
   cylinder(sink, [-0.18, 0.11, 0], 0.015, 0.17, '#abbcb8');
   box(sink, [-0.13, 0.19, 0], [0.12, 0.023, 0.025], '#abbcb8');
+  // Pia em destaque quando o copo precisa ser lavado (devolvido pelo cliente, ou o jogador
+  // tentou pegar outro copo / jogar este fora): moldura dourada pulsando e "Lave o copo aqui".
+  const sinkGlow = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(0.47, 0.07, 0.33)),
+    new THREE.LineBasicMaterial({ color: new THREE.Color('#ffc766').multiplyScalar(2), transparent: true, toneMapped: false }),
+  );
+  sinkGlow.position.set(-0.97, 1.135, -0.34);
+  sinkGlow.visible = false;
+  root.add(sinkGlow);
+  const sinkWord = floatingWord(root, 0.36, 0.06);
+  sinkWord.mesh.position.set(-0.97, 1.33, -0.34);
+  sinkWord.mesh.visible = false;
+  let sinkCallUntil = 0;
+  const callSink = () => (sinkCallUntil = performance.now() + 7000);
+  function sinkHint(t: number, glassDirty: boolean) {
+    const on = glassDirty && (session.state.glass.returned || performance.now() < sinkCallUntil);
+    sinkGlow.visible = sinkWord.mesh.visible = on;
+    if (!on) return;
+    const k = 0.55 + 0.45 * Math.sin(t * 0.005);
+    (sinkGlow.material as THREE.LineBasicMaterial).opacity = k;
+    (sinkWord.mesh.material as THREE.MeshBasicMaterial).opacity = 0.6 + 0.4 * k;
+    const cam = gl.xr.isPresenting ? gl.xr.getCamera() : ctx.camera();
+    sinkWord.mesh.lookAt(cam.getWorldPosition(new THREE.Vector3()));
+  }
+  fontsReady.then(() => sinkWord.draw({ text: 'Lave o copo aqui' }));
   const iceBin = basin('bin-ice', 'Gelo', 0.01);
   for (let i = 0; i < 15; i++) {
     const cube = box(iceBin, [((i % 5) - 2) * 0.073, 0.035, (Math.floor(i / 5) - 1) * 0.08], [0.064, 0.05, 0.064], colors.ice);
@@ -501,6 +526,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     },
     onInteraction: events.activity,
     onSound: (name, where) => foley.play(name, where, 0.7),
+    onDirtyGlass: callSink,
     onPour: (where) => foley.pour(where),
     onGesture: (kind, value, step, where) => {
       contents.progress(kind === 'shake' ? 'shaker' : 'glass', value);
@@ -638,6 +664,8 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       customers?.update(dt / 1000);
       holdPlace();
       placeToast(dt / 1000);
+      const g = session.state.glass;
+      sinkHint(time, Boolean(g.type) && (Object.keys(g.ingredients).length > 0 || g.returned));
       // a fala do pedido só aparece quando o cliente chega ao balcão
       const st = session.state;
       speech.mesh.visible = st.paused || st.phase !== 'playing' || Boolean(customers?.isHere(st.orderIndex));
@@ -677,6 +705,14 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       return { x: p.x, y: p.y, z: p.z };
     },
     /** Diagnóstico: malhas visíveis por grupo de topo e luzes visíveis por tipo. */
+    /** Mostra no VR o resultado de uma ação (o HTML some no óculos). */
+    say(message: string) {
+      if (gl.xr.isPresenting && message) {
+        toast.draw({ line: message, tone: 'system' });
+        toastUntil = performance.now() + 3200;
+      }
+      if (/Lave o copo/.test(message)) callSink();
+    },
     /** Som de cada ação do jogo (computador e VR). Bater/mexer/macerar no VR já soam pelo gesto. */
     actionSound(action: { type: string; target?: string; ingredient?: string }, ok: boolean) {
       if (action.type === 'togglePause' || action.type === 'start' || action.type === 'restart') return;

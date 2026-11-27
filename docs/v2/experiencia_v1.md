@@ -14,10 +14,10 @@ Pedidos do Felipe depois de jogar no Quest 3 de verdade (palavras dele em [HISTO
 | Jogador andando | O bartender fica atrás do balcão: pode se abaixar e se inclinar até 30 cm do lugar; passou disso, o bar acompanha a cabeça e um aviso explica. | `holdPlace` em `src/scene/station.ts` |
 | Pegar de longe | Em VR só se pega o que está a até 32 cm da mão. Mirando algo mais longe e apertando: aviso "Longe demais para pegar…", com "Abaixe-se e estique a mão" quando o objeto está abaixo do tampo, e uma vibração no controle. Placas, páginas e medalhões continuam funcionando à distância. | `REACH` e `tooFar` em `src/interaction/controls.ts` |
 | Item arremessado para fora | Item do jogo que sai da área de alcance (por cima do balcão, no chão, longe nas laterais) volta para o lugar dele, com aviso e som. Os bichos dos eventos ficam de fora: jogá-los longe é descartá-los. | `returnStrays` em `src/interaction/controls.ts` |
+| Lavar o copo, não trocar nem jogar fora | Copo devolvido ganha o selo "Devolvido · lave na pia" e a pia acende (moldura dourada pulsando + "Lave o copo aqui"). Tentar pegar outro copo com o sujo: aviso para lavar e a pia acende. Copo arremessado volta para a bancada com o aviso de lavar. O resultado de toda ação agora aparece também no VR. | `src/scene/station.ts` (`sinkHint`), `src/interaction/controls.ts`, `src/scene/vessel-feedback.ts` |
 | Colher pega pela cabeça | Em VR a mão segura a **ponta do cabo** da colher e do macerador, não o meio. | `GRIPS` em `src/interaction/controls.ts` |
 | Não macera com o copo na bancada | Mesma causa: segurando o macerador pelo meio, a cabeça mal descia abaixo da mão e não chegava ao fundo do copo pousado. Com a pegada no cabo, a cabeça fica 16 cm abaixo da mão. | idem |
 
 ## Em aberto
 
-- **"Pegar mais de um copo de uma vez"**: o jogo tem um copo por pedido. Falta o Felipe dizer o que quer: um copo em cada mão, trocar de copo sem largar o outro, ou preparar mais de um drink.
 - Andar de boneco: os modelos não têm esqueleto. O andar é um deslizar com passinhos (sobe e desce, balança, tronco à frente). Pernas articuladas exigiriam refazer as pessoas com esqueleto no Blender.

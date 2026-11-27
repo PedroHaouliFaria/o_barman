@@ -152,6 +152,7 @@ function act(action: Action) {
   render();
   if (result.ok) station?.confirmPreparation(action as any);
   announce(result.message);
+  station?.say(result.message);
   // Sons do balcão saem do objeto (src/audio/foley.ts); os bipes antigos saíram.
   if (!game.state.paused || action.type === 'togglePause') station?.actionSound(action as any, result.ok);
   return result;

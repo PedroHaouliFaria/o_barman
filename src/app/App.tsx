@@ -4,6 +4,7 @@ import { createXRStore, useXR, XR } from '@react-three/xr';
 import { ToneMappingMode } from 'postprocessing';
 import { useEffect, useRef } from 'react';
 import { STYLES } from '../lab/styles';
+import { QUEST } from './device';
 import { createXRPost } from './xr-post';
 import * as THREE from 'three';
 import { mountStation, type Station, type StationCallbacks } from '../scene/station';
@@ -84,16 +85,20 @@ function StationMount({ game, callbacks, onReady }: Props) {
 function Atmosphere() {
   const { gl, scene, camera } = useThree();
   const inXR = useXR((s) => Boolean(s.session));
-  const light = new URLSearchParams(location.search).has('leve');
+  const q = new URLSearchParams(location.search);
+  // ?semefeitos (teste no Quest): sem pós-processamento, cena direto no headset.
+  const bare = q.has('semefeitos');
+  // No Quest, fora do VR a página só mostra o menu: desenho simples, sem efeitos.
+  const light = q.has('leve') || bare || (QUEST && !inXR);
   const xrPost = useRef<ReturnType<typeof createXRPost> | null>(null);
   useEffect(() => {
     gl.toneMapping = light ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
     gl.toneMappingExposure = 1;
-    // Imagem cheia em toda a visão (sem foveação): nitidez antes de desempenho.
-    if (inXR) gl.xr.setFoveation(0);
+    // Quest: foveação leve (as bordas da lente já são borradas). Computador/simulador: sem.
+    if (inXR) gl.xr.setFoveation(QUEST ? 0.5 : 0);
   }, [gl, inXR, light]);
   useEffect(() => {
-    xrPost.current = createXRPost(gl);
+    xrPost.current = createXRPost(gl, QUEST);
     return () => xrPost.current?.dispose();
   }, [gl]);
   // Com prioridade 1 o R3F deixa de desenhar sozinho: quem desenha é o pós-processamento.
@@ -122,16 +127,15 @@ interface Props {
 export function App(props: Props) {
   return (
     <Canvas
-      shadows="soft"
-      dpr={[1, 2]}
+      shadows={QUEST ? false : 'soft'}
+      dpr={QUEST ? 1 : [1, 2]}
       gl={{ antialias: true, alpha: false }}
       camera={{ position: [0, 1.6, 0], fov: 80, near: 0.005, far: 100 }}
       onCreated={({ gl }) => {
         gl.setClearColor('#0b0807');
-        // ?leve (testes no simulador sem GPU): menos pixels por olho.
-        // Resolução por olho acima da recomendada pelo Quest (1,25x): menos serrilhado e texto
-        // mais nítido. ?leve (ensaios no simulador sem GPU) usa o mínimo.
-        gl.xr.setFramebufferScaleFactor(new URLSearchParams(location.search).has('leve') ? 0.2 : 1.25);
+        // Resolução por olho: a recomendada pelo próprio Quest (1x). Os 1,25x de antes eram 56%
+        // mais pixels e o Quest não aguentou (27/11/2026). ?leve (ensaios sem GPU) usa o mínimo.
+        gl.xr.setFramebufferScaleFactor(new URLSearchParams(location.search).has('leve') ? 0.2 : 1);
       }}
     >
       <XR store={xrStore}>

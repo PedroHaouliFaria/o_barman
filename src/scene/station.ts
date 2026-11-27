@@ -582,8 +582,12 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       return { x: p.x, y: p.y, z: p.z };
     },
     /** Diagnóstico: malhas visíveis por grupo de topo e luzes visíveis por tipo. */
-    meshReport() {
+    /** Exporta o bar para assar a luz (scripts/export-bake.js). */
+    exportBake: () => art.exportBake(),
+    bakedLight: () => art.baked(),
+    meshReport(detail?: string) {
       const out: Record<string, number> = {};
+      const materials: Record<string, number> = {};
       const lights: string[] = [];
       scene.traverseVisible((o) => {
         if ((o as THREE.Light).isLight) lights.push(o.type + (o.parent?.name ? '@' + o.parent.name : ''));
@@ -592,8 +596,12 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
         while (top.parent && top.parent !== root && top.parent !== art.bar.root && top.parent !== scene) top = top.parent;
         const key = (top.parent === art.bar.root ? 'bar/' : top.parent === root ? 'estacao/' : '') + (top.name || top.type);
         out[key] = (out[key] ?? 0) + 1;
+        if (key === detail) {
+          const m = (o as THREE.Mesh).material as THREE.Material;
+          materials[m.name || m.type] = (materials[m.name || m.type] ?? 0) + 1;
+        }
       });
-      return { meshes: Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 25), lights };
+      return { meshes: Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 25), lights, materials };
     },
     /** Custo do último quadro (chamadas de desenho, triângulos, luzes ativas). Diagnóstico de desempenho. */
     stats() {

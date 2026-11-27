@@ -142,7 +142,12 @@ const compositeMaterial = () =>
     },
   );
 
-export function createXRPost(gl: THREE.WebGLRenderer) {
+/**
+ * `quest`: mesma receita com menos custo para o chip do Quest — o brilho (bloom) parte de
+ * meia resolução e usa 6 níveis em vez de 8. A cena e a composição continuam na resolução cheia.
+ */
+export function createXRPost(gl: THREE.WebGLRenderer, quest = false) {
+  const levels = quest ? 6 : LEVELS;
   const quadScene = new THREE.Scene();
   const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
@@ -155,8 +160,8 @@ export function createXRPost(gl: THREE.WebGLRenderer) {
   const options = { type: THREE.HalfFloatType, depthBuffer: false, magFilter: THREE.LinearFilter, minFilter: THREE.LinearFilter };
   let sceneTarget: THREE.WebGLRenderTarget | null = null;
   const lumTarget = new THREE.WebGLRenderTarget(1, 1, options);
-  const downs = Array.from({ length: LEVELS }, () => new THREE.WebGLRenderTarget(1, 1, options));
-  const ups = Array.from({ length: LEVELS - 1 }, () => new THREE.WebGLRenderTarget(1, 1, options));
+  const downs = Array.from({ length: levels }, () => new THREE.WebGLRenderTarget(1, 1, options));
+  const ups = Array.from({ length: levels - 1 }, () => new THREE.WebGLRenderTarget(1, 1, options));
   let width = 0,
     height = 0;
   const clock = new THREE.Timer();
@@ -167,10 +172,12 @@ export function createXRPost(gl: THREE.WebGLRenderer) {
     height = h;
     sceneTarget?.dispose();
     sceneTarget = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, samples: 4, depthBuffer: true });
-    lumTarget.setSize(w, h);
-    let mw = w,
-      mh = h;
-    for (let i = 0; i < LEVELS; i++) {
+    const lw = quest ? Math.round(w / 2) : w,
+      lh = quest ? Math.round(h / 2) : h;
+    lumTarget.setSize(lw, lh);
+    let mw = lw,
+      mh = lh;
+    for (let i = 0; i < levels; i++) {
       mw = Math.max(1, Math.round(mw * 0.5));
       mh = Math.max(1, Math.round(mh * 0.5));
       downs[i].setSize(mw, mh);
@@ -206,7 +213,7 @@ export function createXRPost(gl: THREE.WebGLRenderer) {
       lum.uniforms.inputBuffer.value = sceneTarget!.texture;
       pass(lum, lumTarget);
       let previous: THREE.WebGLRenderTarget = lumTarget;
-      for (let i = 0; i < LEVELS; i++) {
+      for (let i = 0; i < levels; i++) {
         down.uniforms.inputBuffer.value = previous.texture;
         down.uniforms.texelSize.value.set(1 / previous.width, 1 / previous.height);
         pass(down, downs[i]);

@@ -5,7 +5,9 @@ import * as THREE from 'three';
 import { loadBarAssets, loadModels, type BarAssets } from '../lab/assets';
 import { buildBar } from '../lab/bar';
 import { STYLES } from '../lab/styles';
+import { QUEST } from '../app/device';
 import { mergeStatic } from './merge-static';
+import { applyBakedLight, exportForBake, type BakedLight } from './baked-light';
 
 /** O tampo do balcão novo fica 8 mm acima do greybox; o bar desce para alinhar. */
 export const ART_Y = -0.008;
@@ -13,6 +15,16 @@ export const ART_Y = -0.008;
 export const SHELF_SHIFT = -0.6;
 
 export const style = STYLES.ambar;
+
+/**
+ * Luz assada (src/scene/baked-light.ts): no Quest sempre; no computador com ?assada.
+ * ?tempo-real força a luz em tempo real em qualquer aparelho.
+ */
+export const BAKED = (() => {
+  const q = new URLSearchParams(location.search);
+  if (q.has('tempo-real') || q.has('semjuntar')) return false;
+  return q.has('assada') || QUEST;
+})();
 
 /** Clientes Máscara, na ordem dos pedidos jogáveis (ORDERS). `sentado` = modelo de quadril a 0,46 m. */
 export const CUSTOMER_MODELS = [
@@ -48,21 +60,47 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
 
   let loaded: BarAssets | null = null;
   let mergeReport = { before: 0, after: 0 };
-  const ready: Promise<BarAssets> = loadBarAssets().then((assets) => {
+  let baked: BakedLight | null = null;
+  const ready: Promise<BarAssets> = loadBarAssets().then(async (assets) => {
     bar.applyAssets(assets);
     loaded = assets;
+    if (BAKED) {
+      baked = await applyBakedLight(bar.root, import.meta.env.BASE_URL + 'models/luz/bar_luz');
+      if (baked.ok) {
+        // A luz do salão já está na textura: em tempo real só ficam as luminárias do balcão
+        // e o spot do piano, que iluminam o que se mexe (pessoas, copos, garrafas, mãos).
+        const keep = new Set<THREE.Object3D>([...bar.pendantLights]);
+        bar.root.traverse((o) => {
+          const l = o as THREE.Light;
+          if (!l.isLight) return;
+          if ((l as THREE.SpotLight).isSpotLight) keep.add(l); // piano e porta
+          if (!keep.has(l)) l.userData.bakedOff = true;
+        });
+      }
+    }
     // Tudo o que é fixo vira poucas malhas (uma por material): ~10x menos chamadas de desenho.
     if (!new URLSearchParams(location.search).has('semjuntar')) mergeReport = mergeStatic(bar.root);
     return assets;
   });
 
   // Pianista de porcelana (estilo Máscara), de costas no banco do piano.
+  // Pessoa parada: junta as peças de mesmo material (o pianista tem 11 peças de fraque).
+  // Visual idêntico, menos chamadas de desenho.
+  const compact = (person: THREE.Object3D) => {
+    const flag = person.userData.dynamic;
+    person.userData.dynamic = false;
+    person.updateMatrixWorld(true);
+    mergeStatic(person);
+    person.userData.dynamic = flag;
+  };
   const pianistLoaded = loadModels(['mascara_pianista']).then(([pianist]) => {
     const f = bar.pianistFigure;
     pianist.position.copy(f.position);
     pianist.rotation.copy(f.rotation);
     f.visible = false;
+    pianist.userData.dynamic = true; // pessoa: fica fora da junção e da luz assada
     f.parent!.add(pianist);
+    compact(pianist);
   });
 
   // Pessoas sentadas às mesas: os clientes sentados esperam ali até a vez deles.
@@ -76,6 +114,7 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
       person.rotation.copy(f.rotation);
       person.userData.dynamic = true; // aparece e some conforme o pedido
       f.parent!.add(person);
+      compact(person);
       tablePeople.push(person);
     });
     return models;
@@ -88,14 +127,16 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
   // O perfil 'leve' (?leve) existe só para os ensaios no simulador sem GPU.
   let quality: 'alta' | 'vr' | 'leve' = 'alta';
   function applyQuality(gl: THREE.WebGLRenderer) {
-    const light = quality === 'leve';
+    // Com luz assada as sombras e o vidro com refração saem (o Felipe aprovou: o que importa
+    // é a atmosfera, não a qualidade dos objetos).
+    const light = quality === 'leve' || (BAKED && baked?.ok === true);
     gl.shadowMap.enabled = !light;
     bar.root.traverse((o) => {
       const l = o as THREE.Light;
       if (l.isLight) {
         l.userData.castShadow ??= l.castShadow;
         l.castShadow = light ? false : l.userData.castShadow;
-        l.visible = true;
+        l.visible = !l.userData.bakedOff;
         const shadow = (l as THREE.PointLight).shadow;
         if (shadow && l.castShadow) {
           const size = 1024; // mesma sombra no computador e no Quest
@@ -139,7 +180,12 @@ export function mountArtBar(root: THREE.Object3D, scene: THREE.Scene, playableBo
     /** Banqueta extra para o cliente sentado no balcão (null até os modelos carregarem). */
     stool: () => loaded?.models.banqueta?.clone() ?? null,
     /** Atos: a luz do salão vai sumindo e as lâmpadas tremem mais. */
+    /** Luz assada ativa? (diagnóstico) */
+    baked: () => baked,
+    /** Exporta o bar para assar a luz no Blender (scripts/export-bake.js). */
+    exportBake: () => exportForBake(bar.root, [ambient, hemi]),
     setAct(act: number) {
+      baked?.setGain(act >= 3 ? 0.8 : act === 2 ? 0.9 : 1);
       ambient.intensity = style.light.ambient[1] * (act >= 3 ? 0.55 : act === 2 ? 0.8 : 1);
       hemi.intensity = style.light.hemi[2] * (act >= 3 ? 0.6 : act === 2 ? 0.85 : 1);
       (scene.fog as THREE.FogExp2).density = style.fog.density * (act >= 3 ? 1.35 : act === 2 ? 1.15 : 1);

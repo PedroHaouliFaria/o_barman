@@ -450,6 +450,8 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
     });
   }
 
+  // intensidade sem tremulação (a luz assada usa este valor)
+  for (const f of flickers) f.light.userData.base = f.base;
   return {
     root,
     frontCustomer,

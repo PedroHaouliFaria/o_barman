@@ -46,44 +46,46 @@ export function dressBottle(item: Item, assets: BarAssets) {
 }
 
 /** Clientes Máscara: um modelo por pedido, carregado em segundo plano. */
+/**
+ * Elenco de clientes: o modelo de cada pedido (sentado ou em pé) e a versão em pé de quem
+ * espera à mesa. Quem decide onde cada um está e como anda é customerFlow (customer-flow.ts).
+ */
 export function customerCast(person: THREE.Object3D, stool: () => THREE.Object3D | null) {
   const models: (THREE.Object3D | null)[] = CUSTOMER_MODELS.map(() => null);
+  const standing: (THREE.Object3D | null)[] = CUSTOMER_MODELS.map(() => null);
   let seat: THREE.Object3D | null = null;
-  let current = -1;
-  let visible = false;
-  const loading = loadModels(CUSTOMER_MODELS.map((c) => c.file)).then((loaded) => {
+  const files = CUSTOMER_MODELS.map((c) => c.file);
+  const extra = CUSTOMER_MODELS.flatMap((c, i) => (c.standing ? [[i, c.standing] as const] : []));
+  const loading = Promise.all([loadModels(files), loadModels(extra.map(([, f]) => f))]).then(([loaded, up]) => {
     loaded.forEach((model, i) => {
       const { seated } = CUSTOMER_MODELS[i];
       // Os modelos olham para -Z; o cliente olha para o bartender (+Z).
       model.rotation.y = Math.PI;
       // Sentados ficam numa banqueta do balcão (assento a 0,815 m; quadril do modelo a 0,46 m).
       if (seated) model.position.set(0, 0.355, -0.12);
+      model.userData.baseY = model.position.y;
       model.visible = false;
       person.add(model);
       models[i] = model;
     });
-    show(current, visible);
+    up.forEach((model, k) => {
+      model.rotation.y = Math.PI;
+      model.userData.baseY = 0;
+      model.visible = false;
+      person.add(model);
+      standing[extra[k][0]] = model;
+    });
+    // banqueta fixa no balcão (bar tem banqueta; ela não aparece e some com o cliente)
+    seat = stool();
+    if (seat) {
+      seat.position.set(0, 0, -0.19);
+      person.add(seat);
+    }
     return loaded;
   });
-  function show(index: number, on: boolean) {
-    current = index;
-    visible = on;
-    const model = models[index];
-    if (!model) return false;
-    for (const m of models) if (m) m.visible = m === model && on;
-    const seated = CUSTOMER_MODELS[index]?.seated;
-    if (seated && !seat) {
-      seat = stool();
-      if (seat) {
-        seat.position.set(0, 0, -0.19);
-        person.add(seat);
-      }
-    }
-    if (seat) seat.visible = on && Boolean(seated);
-    return true;
-  }
-  return { show, loading, hasModel: (index: number) => Boolean(models[index]) };
+  return { models, standing, loading, seat: () => seat, hasModel: (index: number) => Boolean(models[index]) };
 }
+export type CustomerCast = ReturnType<typeof customerCast>;
 
 /** Objetos de jogo modelados no Blender (public/models/props/utensilios.glb). */
 export async function loadUtensils() {

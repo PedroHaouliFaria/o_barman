@@ -8,6 +8,15 @@ export function emptyShaker() {
   return { ingredients: {}, closed: false, shaken: false };
 }
 
+/** Primeiro problema do drink: 'glass' (copo errado), 'recipe' (ingredientes) ou 'technique'. */
+export function drinkProblem(glass, order) {
+  const message = validateDrink(glass, order);
+  if (!message) return null;
+  if (glass.type !== order.glass) return { kind: 'glass', message };
+  if (message.startsWith('Está faltando') || message.startsWith('Veio em excesso')) return { kind: 'recipe', message };
+  return { kind: 'technique', message };
+}
+
 export function validateDrink(glass, order) {
   if (glass.type !== order.glass) return 'Eu pedi este drink em ' + GLASSES[order.glass] + '.';
   const missing = [];

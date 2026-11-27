@@ -10,7 +10,7 @@ type V3 = [number, number, number];
 export interface BarScene {
   root: THREE.Group;
   update(t: number, dt: number): void;
-  door: { openness: number };
+  door: { openness: number; hold: number };
   pianoAnchor: THREE.Object3D;
   murmurAnchors: THREE.Object3D[];
   doorAnchor: THREE.Object3D;
@@ -365,15 +365,19 @@ export function buildBar(style: StyleDef, options: BarOptions = {}): BarScene {
   // placa de saída
   box(doorG, [0.5, 0.18, 0.06], [0, 2.6, 0.05], 'woodDark');
   mesh(doorG, new THREE.PlaneGeometry(0.42, 0.11), 'exitSign', [0, 2.6, 0.085]);
-  const door = { openness: 0 };
-  animators.push((t) => {
+  // `hold`: segundos de porta aberta pedidos pelo jogo (cliente entrando ou saindo).
+  const door = { openness: 0, hold: 0 };
+  animators.push((t, dt) => {
     // ciclo de 22 s: abre devagar, alguém parado lá fora, fecha
     const c = t % 22;
-    const target = c > 9 && c < 15 ? 1 : 0;
+    door.hold = Math.max(0, door.hold - dt);
+    const visitor = door.hold > 0;
+    const target = visitor || (c > 9 && c < 15) ? 1 : 0;
     door.openness += (target - door.openness) * 0.02;
     hinge.rotation.y = -door.openness * 1.35;
     doorLight.intensity = door.openness * style.light.door[1];
-    outsider.root.visible = door.openness > 0.25;
+    // a silhueta lá fora só aparece quando a porta abre sozinha (não quando é um cliente)
+    outsider.root.visible = !visitor && door.openness > 0.25;
     nightMat.color.copy(nightBase).lerp(nightOpen, door.openness);
   });
   const doorAnchor = group(doorG, [0, 1.2, 0]);

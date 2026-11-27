@@ -26,14 +26,19 @@ export const BAKED = (() => {
   return q.has('assada') || QUEST;
 })();
 
-/** Clientes Máscara, na ordem dos pedidos jogáveis (ORDERS). `sentado` = modelo de quadril a 0,46 m. */
-export const CUSTOMER_MODELS = [
+/**
+ * Clientes Máscara, na ordem dos pedidos jogáveis (ORDERS). `seated` = modelo de quadril a
+ * 0,46 m (senta na banqueta do balcão). `table` = espera sentado à mesa (índice em
+ * tablePeople) e levanta na sua vez; `standing` = a versão em pé que anda até o balcão.
+ * Quem não tem mesa entra pela porta dos fundos.
+ */
+export const CUSTOMER_MODELS: { file: string; seated: boolean; table?: number; standing?: string }[] = [
   { file: 'mascara_executivo', seated: false },
-  { file: 'mascara_turista', seated: true },
-  { file: 'mascara_aposentado', seated: true },
+  { file: 'mascara_turista', seated: true, table: 0, standing: 'mascara_turista_em_pe' },
+  { file: 'mascara_aposentado', seated: true, table: 1, standing: 'mascara_aposentado_em_pe' },
   { file: 'mascara_festeira', seated: false },
   { file: 'mascara_cavalheiro', seated: false },
-  { file: 'mascara_universitario', seated: true },
+  { file: 'mascara_universitario', seated: true, table: 2, standing: 'mascara_universitario_em_pe' },
   { file: 'mascara_detetive', seated: false },
   { file: 'mascara_encharcado', seated: false },
   { file: 'mascara_alongado', seated: false },

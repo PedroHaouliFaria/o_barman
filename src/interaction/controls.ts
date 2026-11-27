@@ -40,6 +40,8 @@ interface Hand extends Holder {
   selectPressed?: boolean;
   rawGrip?: boolean;
   rawSelect?: boolean;
+  /** objeto mirado que está longe demais para pegar */
+  far?: Item | null;
 }
 
 export interface ControlsOptions {
@@ -57,8 +59,27 @@ export interface ControlsOptions {
   collectSource: (id: string) => void;
   tickEnvironment: (dt: number) => void;
   updateVesselPanels: (holders: Holder[]) => void;
+  /** Gesto em andamento: progresso 0..1 e `step` a cada batida/volta/pilada (som e anel). */
+  /** Som de manuseio: pegar e pousar. */
+  onSound?: (name: 'pick' | 'clink', where: THREE.Object3D) => void;
+  /** Líquido caindo (chamado a cada quadro enquanto despeja; null = parou). */
+  onPour?: (where: THREE.Object3D | null) => void;
+  onGesture?: (kind: 'shake' | 'stir' | 'muddle', progress: number, step: boolean, where: THREE.Object3D) => void;
   onInteraction: () => void;
 }
+
+/**
+ * Em VR só se pega o que está ao alcance da mão (Felipe, 27/11/2026: "nao deixe ele pegar as
+ * coisas de muito longe, apenas de aproximidade"). A mira ainda escolhe entre os objetos
+ * próximos e aciona placas, páginas e medalhões à distância.
+ */
+const REACH = 0.32;
+
+/** Ponto de cada utensílio (no próprio objeto) que fica na mão em VR: o fim do cabo. */
+const GRIPS: Record<string, [number, number, number]> = {
+  spoon: [0, -0.17, 0],
+  pestle: [0, 0.07, 0],
+};
 
 export function bindControls(o: ControlsOptions) {
   const { scene, gl, root, items, flow, cursors, act, activate, feedback, session } = o;
@@ -149,7 +170,39 @@ export function bindControls(o: ControlsOptions) {
     ray.near = 0.01;
     ray.far = 6;
     ray.set(here, axis);
-    return fromRay(hand);
+    const hit = fromRay(hand);
+    hand.far = null;
+    if (hit && !hand.held && grabbable(hit)) {
+      hand.el.getWorldPosition(here);
+      hit.obj.getWorldPosition(point);
+      if (here.distanceTo(point) > REACH) {
+        hand.far = hit;
+        return null;
+      }
+    }
+    return hit;
+  }
+  function grabbable(item: Item) {
+    return Boolean(item.held) || item.id.startsWith('bin-') || item.id.startsWith('choose-') || item.id.startsWith('event-');
+  }
+  /** Tentou pegar algo longe: aviso claro e um toque no controle. */
+  function tooFar(hand: Hand) {
+    const item = hand.far;
+    if (!item) return false;
+    item.obj.getWorldPosition(point);
+    root.worldToLocal(point);
+    const low = point.y < 1.0;
+    feedback(
+      'Longe demais para pegar ' + (item.name ? item.name.toLowerCase() : 'isso') + '. ' +
+        (low ? 'Abaixe-se e estique a mão até ele.' : 'Estique a mão até encostar nele.'),
+    );
+    const pad = hand.source?.gamepad as (Gamepad & { hapticActuators?: { pulse(v: number, ms: number): unknown }[] }) | undefined;
+    try {
+      pad?.hapticActuators?.[0]?.pulse(0.5, 70);
+    } catch {
+      /* sem vibração */
+    }
+    return true;
   }
   const allHolders: Holder[] = [desktop];
   const holders = () => allHolders;
@@ -245,6 +298,7 @@ export function bindControls(o: ControlsOptions) {
     follow(holder);
     item.obj.getWorldPosition(holder.previous);
     feedback(item.id === 'glass' ? 'Copo em mãos. Entregue ao cliente ou leve à pia.' : item.name + ' em mãos.');
+    o.onSound?.('pick', item.obj);
   }
   function follow(holder: Holder) {
     const anchor = holder.el;
@@ -256,6 +310,11 @@ export function bindControls(o: ControlsOptions) {
     anchor.getWorldQuaternion(quaternion);
     obj.quaternion.copy(quaternion);
     if (!holder.isMouse && holder.held!.id === 'spoon') obj.rotateX(Math.PI);
+    // Utensílios longos: a mão segura a ponta do cabo, não o meio (Felipe, 27/11/2026:
+    // "estamos pegando a colher pela cabeca, e nao pelo cabo"). A concha e a cabeça do
+    // macerador ficam bem abaixo da mão e alcançam o fundo do copo pousado na bancada.
+    const grip = !holder.isMouse && GRIPS[holder.held!.id];
+    if (grip) obj.position.sub(dest.set(...grip).applyQuaternion(obj.quaternion));
     obj.updateMatrixWorld(true);
   }
   function mark(item: Item | null, cursorRing: THREE.Object3D) {
@@ -456,6 +515,7 @@ export function bindControls(o: ControlsOptions) {
     hand.sampled = false;
     flow.visible = false;
     feedback(item.name + ' na bancada.');
+    o.onSound?.('clink', item.obj);
     return true;
   }
   function tipIn(id: string) {
@@ -480,7 +540,10 @@ export function bindControls(o: ControlsOptions) {
     const inside = aligned && tip.y <= rim;
     if (!spoon) {
       const ready = glass.ingredients.lime && glass.ingredients.sugar && !glass.muddled;
-      if (muddleStep(hand.motion, tip.y, rim, ready && aligned && tip.y < rim + 0.16)) act({ type: 'muddle' });
+      const strokes = hand.motion.strokes;
+      const done = muddleStep(hand.motion, tip.y, rim, ready && aligned && tip.y < rim + 0.16);
+      if (hand.motion.strokes !== strokes || done) o.onGesture?.('muddle', done ? 1 : hand.motion.strokes / 2, true, items.get('glass')!.obj);
+      if (done) act({ type: 'muddle' });
       return;
     }
     if (spoonLoaded) {
@@ -494,8 +557,14 @@ export function bindControls(o: ControlsOptions) {
       }
       return;
     }
-    if (stirStep(hand.motion, tip, inside && !glass.stirred && Object.keys(glass.ingredients).length > 0))
-      act({ type: 'stir' });
+    const travel = Math.abs(hand.motion.stirTravel);
+    const stirred = stirStep(hand.motion, tip, inside && !glass.stirred && Object.keys(glass.ingredients).length > 0);
+    const now = Math.abs(hand.motion.stirTravel);
+    // um "tim" da colher no vidro a cada quarto de volta
+    if (stirred || Math.floor(now / (Math.PI / 2)) > Math.floor(travel / (Math.PI / 2)))
+      o.onGesture?.('stir', stirred ? 1 : now / (1.9 * Math.PI), true, items.get('glass')!.obj);
+    else if (now > 0) o.onGesture?.('stir', now / (1.9 * Math.PI), false, items.get('glass')!.obj);
+    if (stirred) act({ type: 'stir' });
   }
   function updateHand(hand: Hand, dt: number) {
     const item = hand.held;
@@ -528,6 +597,7 @@ export function bindControls(o: ControlsOptions) {
           flow.quaternion.setFromUnitVectors(axis.set(0, 1, 0), delta.normalize());
           flow.visible = true;
         }
+        o.onPour?.(target.obj);
       }
     }
     if (isShaker) {
@@ -535,7 +605,11 @@ export function bindControls(o: ControlsOptions) {
       delta.subVectors(point, hand.previous);
       hand.previous.copy(point);
       if (session.state.shaker.closed && !session.state.shaker.shaken) {
-        if (shakeStep(hand.motion, delta.x, delta.y, delta.z, dt)) act({ type: 'shake' });
+        const turns = hand.motion.turns;
+        const shaken = shakeStep(hand.motion, delta.x, delta.y, delta.z, dt);
+        // cada troca de direção é o gelo batendo no metal
+        if (shaken || hand.motion.turns > turns) o.onGesture?.('shake', shaken ? 1 : hand.motion.turns / 3, true, item.obj);
+        if (shaken) act({ type: 'shake' });
       } else resetShake(hand.motion);
     }
   }
@@ -640,6 +714,7 @@ export function bindControls(o: ControlsOptions) {
   function useHand(hand: Hand, type: string) {
     if (type === 'squeezeend') return drop(hand);
     const target = front(hand);
+    if (!target && !hand.held && tooFar(hand)) return;
     if (type === 'squeezestart') {
       if (!hand.held && target?.id === 'drawer') activate(target.id);
       else if (!hand.held) pick(hand, target);
@@ -764,6 +839,26 @@ export function bindControls(o: ControlsOptions) {
   }
   window.addEventListener('blur', resetInput, listeners);
 
+  // Item do jogo que sai do alcance (arremessado por cima do balcão, caído no chão, longe
+  // nas laterais) volta para o lugar dele: o turno nunca fica impossível (Felipe, 27/11/2026).
+  // Os bichos dos eventos (thrownSpecial) ficam de fora: jogá-los longe é descartá-los.
+  const REACHABLE = { xMin: -1.45, xMax: 1.45, zMin: -1.2, zMax: 1.1, yMin: 0.35 };
+  function returnStrays() {
+    for (const item of [...physics.bodies.keys()]) {
+      if (item.thrownSpecial || isSpecial(item.id) || !item.home) continue;
+      const p = item.obj.position;
+      const out = p.y < REACHABLE.yMin || p.x < REACHABLE.xMin || p.x > REACHABLE.xMax || p.z < REACHABLE.zMin || p.z > REACHABLE.zMax;
+      if (!out) continue;
+      physics.remove(item);
+      item.obj.position.copy(item.home);
+      if (item.homeQuaternion) item.obj.quaternion.copy(item.homeQuaternion);
+      else item.obj.quaternion.identity();
+      if (portions.has(item.id)) item.obj.visible = portionAtRest.get(item.id)!;
+      item.stow?.();
+      feedback((item.name || 'O objeto') + ' voltou para o lugar.');
+      o.onSound?.('clink', item.obj);
+    }
+  }
   function frame(time: number, dt: number, xrFrame?: XRFrame) {
     const immersive = immersed();
     if (immersive !== wasImmersed) {
@@ -773,7 +868,10 @@ export function bindControls(o: ControlsOptions) {
     desktop.el = o.camera();
     flow.visible = false;
     if (!session.state.paused) o.tickEnvironment(dt);
-    if (live()) physics.step(dt);
+    if (live()) {
+      physics.step(dt);
+      returnStrays();
+    }
     if (immersive) {
       trackHands(dt, xrFrame);
       const refresh = time - lastHover > 70;
@@ -809,7 +907,11 @@ export function bindControls(o: ControlsOptions) {
         const copy = model.clone();
         const left = hand.side === 'left';
         copy.scale.set(left ? -1 : 1, 1, 1);
-        copy.rotation.set(0, Math.PI, left ? -Math.PI / 2 : Math.PI / 2, 'YXZ');
+        // O modelo é uma mão direita (palma para cima, dedos em +Z, polegar em -X); a esquerda é
+        // o espelho. No controle: dedos para a frente, palma virada para dentro e polegar para
+        // cima, como quem segura o controle. (Antes o giro era ao contrário: palma para fora e
+        // polegar para baixo, o que fazia cada mão parecer a do outro lado.)
+        copy.rotation.set(0, Math.PI, left ? Math.PI / 2 : -Math.PI / 2, 'YXZ');
         copy.traverse((o) => (o.raycast = () => {}));
         hand.el.add(copy);
       }

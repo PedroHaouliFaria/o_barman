@@ -12,10 +12,12 @@ import { bookPage, medallion, paperLabel, plaque, subtitle, ticket, type Panel }
 import { buildEvents, specimen } from './environment';
 import { createPianist } from '../audio/piano';
 import { createMurmurs } from '../audio/room';
+import { createFoley, type FoleyName } from '../audio/foley';
 import { tipJar } from './tip-jar';
 import { toolDrawer } from './tool-drawer';
 import type { Action, Item, Result } from './types';
 import { vesselFeedback } from './vessel-feedback';
+import { customerFlow } from './customer-flow';
 
 const colors: Record<string, string> = {
   rum: '#b66e35', cola: '#74483e', lime: '#9caf57', ice: '#b2e3e4', cachaca: '#afc28d', sugar: '#f0dfc1',
@@ -72,6 +74,8 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   ctx.camera().add(listener);
   const pianist = createPianist(listener, art.bar.pianoAnchor, (hand) => art.bar.strike(hand));
   const murmurs = createMurmurs(listener, art.bar.murmurAnchors);
+  // Sons do balcão (coqueteleira, colher, pilão, líquido, passos, sino da porta).
+  const foley = createFoley(listener, root);
   let soundOn = true;
   const illuminate = (act: number) => {
     art.setAct(act);
@@ -89,15 +93,15 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   const drawBlocks = customer(person, hand);
   const blockParts = person.children.filter((child) => child !== hand);
   const cast = customerCast(person, art.stool);
-  function drawCustomer(index: number, visible: boolean) {
+  // O cliente de blocos do protótipo nunca aparece: só o modelo Máscara (customer-flow.ts).
+  for (const part of blockParts) part.visible = false;
+  let servedType: string | null = null; // copo do último drink, para o cliente levar
+  let customers: ReturnType<typeof customerFlow> | null = null;
+  function drawCustomer(index: number, visible: boolean, served = false) {
     drawBlocks(index, visible);
     person.visible = true;
-    cast.show(index, visible);
-    // O cliente de blocos do protótipo nunca aparece: só o modelo Máscara.
     for (const part of blockParts) part.visible = false;
-    // Quem está sentado à mesa levanta para vir ao balcão na sua vez.
-    const atTable = [1, 2, 5];
-    art.tablePeople.forEach((p, i) => (p.visible = !(visible && index === atTable[i])));
+    customers?.show(index, visible, served);
   }
   // Comanda: papel espetado num suporte de latão no balcão, inclinado para o bartender.
   const spike = group(root, [0.1, 1.084, -0.985]);
@@ -176,6 +180,26 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
   }
   // Superfície do drinque: aparece quando há algo no copo, a 70% da altura.
   const fill = cylinder(glass, [0, 0, 0], 1, 0.004, '#c6894d');
+  customers = customerFlow({
+    stage: root,
+    person,
+    cast,
+    tablePeople: art.tablePeople,
+    foley,
+    door: art.bar.door,
+    doorAnchor: art.bar.doorAnchor,
+    drink: () => {
+      const model = servedType ? glassModels.get(servedType) : null;
+      if (!model) return null;
+      const copy = new THREE.Group();
+      const g = model.clone();
+      g.visible = true;
+      const f = fill.clone();
+      f.visible = true;
+      copy.add(g, f);
+      return copy;
+    },
+  });
   fill.material = new THREE.MeshStandardMaterial({
     color: '#b8742f',
     roughness: 0.15,
@@ -342,7 +366,62 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     writePage();
     callbacks.onPage?.(index);
   }
-  const feedback = (message: string) => callbacks.onFeedback?.(message);
+  // No VR o HTML some: os avisos ("Copo em mãos", "Longe demais...") aparecem num cartão
+  // logo abaixo da linha de visão, que acompanha a cabeça devagar e some sozinho.
+  const toast = subtitle(root, [0, 0, 0], 0.62, 0.15, [0, 0, 0]);
+  toast.mesh.visible = false;
+  toast.mesh.renderOrder = 30;
+  let toastUntil = 0;
+  const toastAt = new THREE.Vector3();
+  const toastLook = new THREE.Vector3();
+  const feedback = (message: string) => {
+    callbacks.onFeedback?.(message);
+    if (gl.xr.isPresenting && message) {
+      toast.draw({ line: message, tone: 'system' });
+      toastUntil = performance.now() + 3200;
+    }
+  };
+  function placeToast(dt: number) {
+    const live = gl.xr.isPresenting && performance.now() < toastUntil;
+    toast.mesh.visible = live;
+    if (!live) return;
+    const head = gl.xr.getCamera();
+    head.getWorldPosition(toastLook);
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
+    fwd.y = 0;
+    fwd.normalize();
+    const want = toastLook.clone().addScaledVector(fwd, 0.7);
+    want.y -= 0.3;
+    root.worldToLocal(want);
+    if (toast.mesh.userData.placed !== true) {
+      toastAt.copy(want);
+      toast.mesh.userData.placed = true;
+    } else toastAt.lerp(want, Math.min(1, dt * 4));
+    toast.mesh.position.copy(toastAt);
+    toast.mesh.updateMatrixWorld();
+    toast.mesh.lookAt(toastLook); // de frente para a cabeça
+  }
+  // O bartender fica atrás do balcão (Felipe, 27/11/2026: "nao deixe a pessoa ficar andando
+  // pelo jogo"). Pode se abaixar e se inclinar até LEAN do lugar; passou disso, o bar
+  // acompanha a cabeça (como se ele estivesse preso ao chão) e um aviso explica.
+  const LEAN = 0.3;
+  let leanWarned = 0;
+  function holdPlace() {
+    if (!gl.xr.isPresenting) return;
+    const head = new THREE.Vector3();
+    gl.xr.getCamera().getWorldPosition(head);
+    const local = root.worldToLocal(head.clone());
+    const d = Math.hypot(local.x, local.z);
+    if (d <= LEAN) return;
+    const k = 1 - LEAN / d;
+    root.position.x += local.x * k;
+    root.position.z += local.z * k;
+    root.updateMatrixWorld(true);
+    if (performance.now() - leanWarned > 6000) {
+      leanWarned = performance.now();
+      feedback('Você fica atrás do balcão. Dá para se abaixar e esticar o braço, mas não andar.');
+    }
+  }
   function act(action: Action): Result {
     events.activity();
     if (callbacks.onAction) return callbacks.onAction(action);
@@ -379,7 +458,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     }
     return false;
   }
-  const events = buildEvents({ root, target, onHint: feedback, onCue: callbacks.onEventCue });
+  const events = buildEvents({ root, target, onHint: feedback, onCue: (id: string) => foley.play(id === 'slug_slime' ? 'squish' : 'skitter', null, 0.7) });
   let dressed = false;
   // O bar só aparece com todos os modelos certos carregados (nada do protótipo na tela).
   root.visible = false;
@@ -421,6 +500,12 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       contents.frame(holders, immersive ? gl.xr.getCamera() : ctx.camera(), immersive, gl.domElement);
     },
     onInteraction: events.activity,
+    onSound: (name, where) => foley.play(name, where, 0.7),
+    onPour: (where) => foley.pour(where),
+    onGesture: (kind, value, step, where) => {
+      contents.progress(kind === 'shake' ? 'shaker' : 'glass', value);
+      if (step) foley.play(kind, where, kind === 'shake' ? 1 : 0.8);
+    },
   });
   function render(state: any) {
     showTips(state.tips);
@@ -436,7 +521,9 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     if (pausedChange) pianist.setPaused(state.paused);
     if (changed) {
       controls.clearGlass();
-      drawCustomer(state.orderIndex, state.phase === 'playing');
+      // o anterior foi servido se o pedido avançou (ou o turno acabou bem)
+      const served = state.orderIndex > previousOrder && previousOrder >= 0;
+      drawCustomer(state.orderIndex, state.phase === 'playing' || (served && state.phase === 'finished'), served);
       illuminate(session.order?.act ?? (state.phase === 'finished' ? ORDERS.at(-1)!.act : 1));
     }
     const collected = state.event?.status === 'collected' ? state.event.ingredient : null;
@@ -487,6 +574,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
             ? { word: 'Voltar', icon: 'play' }
             : { word: 'Pausar', icon: 'pause' },
     );
+    if (state.glass.type) servedType = state.glass.type;
     glass.visible = Boolean(state.glass.type);
     for (const [type, model] of glassModels) model.visible = type === state.glass.type;
     const cup = GLASS_SHAPES[state.glass.type ?? 'highball'];
@@ -537,6 +625,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     setSound(on: boolean) {
       soundOn = on;
       pianist.setEnabled(on);
+      foley.setEnabled(on);
       illuminate(session.order?.act ?? 1);
     },
     frame(time: number, dt: number, xrFrame?: XRFrame) {
@@ -546,6 +635,12 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
         art.setQuality(mode, gl);
       }
       art.update(time / 1000, dt / 1000);
+      customers?.update(dt / 1000);
+      holdPlace();
+      placeToast(dt / 1000);
+      // a fala do pedido só aparece quando o cliente chega ao balcão
+      const st = session.state;
+      speech.mesh.visible = st.paused || st.phase !== 'playing' || Boolean(customers?.isHere(st.orderIndex));
       controls.frame(time, dt, xrFrame);
     },
     confirmPreparation: contents.confirmPreparation,
@@ -582,6 +677,39 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
       return { x: p.x, y: p.y, z: p.z };
     },
     /** Diagnóstico: malhas visíveis por grupo de topo e luzes visíveis por tipo. */
+    /** Som de cada ação do jogo (computador e VR). Bater/mexer/macerar no VR já soam pelo gesto. */
+    actionSound(action: { type: string; target?: string; ingredient?: string }, ok: boolean) {
+      if (action.type === 'togglePause' || action.type === 'start' || action.type === 'restart') return;
+      const glassObj = items.get('glass')?.obj ?? null;
+      const shakerObj = items.get('shaker')?.obj ?? null;
+      const vessel = action.target === 'shaker' ? shakerObj : glassObj;
+      if (!ok) return foley.play('error', vessel, 0.6);
+      const vr = gl.xr.isPresenting;
+      const series = (name: FoleyName, n: number, gap: number, at: THREE.Object3D | null) => {
+        for (let i = 0; i < n; i++) foley.play(name, at, 0.9, i * gap);
+      };
+      switch (action.type) {
+        case 'add': {
+          const id = action.ingredient ?? '';
+          if (id === 'ice') foley.play('ice', vessel);
+          else if (['lime', 'mint', 'sugar', 'cockroach', 'spider', 'slug_slime'].includes(id)) foley.play('drop', vessel);
+          else if (!vr) foley.play('pour', vessel, 0.7);
+          break;
+        }
+        case 'shake': if (!vr) series('shake', 7, 0.11, shakerObj); break;
+        case 'stir': if (!vr) series('stir', 4, 0.22, glassObj); break;
+        case 'muddle': if (!vr) series('muddle', 3, 0.28, glassObj); break;
+        case 'toggleLid': foley.play('lid', shakerObj); break;
+        case 'transfer': foley.play('pour', glassObj, 0.8); break;
+        case 'rinse': foley.play('water', vessel); break;
+        case 'deliver': foley.play('deliver', glassObj); break;
+        case 'selectGlass': foley.play('pick', glassObj, 0.8); break;
+        default: break;
+      }
+    },
+    eventSound(id: string) {
+      foley.play(id === 'cockroach' ? 'skitter' : id === 'slug_slime' ? 'squish' : 'skitter', null, 0.7);
+    },
     /** Exporta o bar para assar a luz (scripts/export-bake.js). */
     exportBake: () => art.exportBake(),
     bakedLight: () => art.baked(),
@@ -635,6 +763,7 @@ export function mountStation(ctx: StationContext, session: any, callbacks: Stati
     destroy() {
       pianist.dispose();
       murmurs.dispose();
+      foley.dispose();
       listener.removeFromParent();
       controls.destroy();
       contents.destroy();

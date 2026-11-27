@@ -1224,6 +1224,11 @@ def build_person(key, p):
     clear()
 
 
+# Versões em pé de quem espera sentado à mesa: na sua vez, a pessoa levanta e anda até o
+# balcão (pedido do Felipe, 27/11/2026: "nao tem animacao do cliente andando ate o balcao").
+for _k in ('turista', 'aposentado', 'universitario'):
+    PEOPLE[_k + '_em_pe'] = dict(PEOPLE[_k], seated=False)
+
 lib.reset()
 only = sys.argv[sys.argv.index('--') + 2:] if '--' in sys.argv and len(sys.argv) > sys.argv.index('--') + 2 else []
 for key, p in PEOPLE.items():

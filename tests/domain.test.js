@@ -399,3 +399,13 @@ test('cada cliente aguarda a escolha manual do copo, inclusive no primeiro pedid
     perform(game, 'deliver');
   }
 });
+
+test('DOM-14 | copo errado gera reclamação sobre o copo, sem entregar qual é o certo', () => {
+  const game = openShift();
+  perform(game, 'selectGlass', { glass: 'rocks' });
+  fillCuba(game);
+  perform(game, 'deliver');
+  assert.match(game.state.complaint, /copo|taça|caneca/i);
+  assert.doesNotMatch(game.state.complaint, /Highball|copo alto/);
+  assert.doesNotMatch(game.state.complaint, /fossa|arroto|defunto|fralda|ralo/);
+});
